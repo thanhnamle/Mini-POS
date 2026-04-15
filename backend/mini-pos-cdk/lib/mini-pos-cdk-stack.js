@@ -6,12 +6,6 @@ const path = require('path');
 // const sqs = require('aws-cdk-lib/aws-sqs');
 
 class MiniPosCdkStack extends Stack {
-  /**
-   *
-   * @param {Construct} scope
-   * @param {string} id
-   * @param {StackProps=} props
-   */
   constructor(scope, id, props) {
     super(scope, id, props);
 
