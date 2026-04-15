@@ -50,6 +50,11 @@ class MiniPosCdkStack extends Stack {
         allowMethods: apigateway.Cors.ALL_METHODS,
       },
     });
+
+    // 4. Define API resources and methods
+    const productsResource = api.root.addResource('products');
+    const getProductsIntegration = new apigateway.LambdaIntegration(getProductsLambda);
+    productsResource.addMethod('GET', getProductsIntegration);
   }
 }
 
