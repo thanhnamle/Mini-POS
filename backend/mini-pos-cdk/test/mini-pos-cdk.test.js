@@ -1,13 +1,13 @@
 // const cdk = require('aws-cdk-lib/core');
 // const { Template } = require('aws-cdk-lib/assertions');
-// const Backend = require('../lib/backend-stack');
+// const MiniPosCdk = require('../lib/mini-pos-cdk-stack');
 
 // example test. To run these tests, uncomment this file along with the
-// example resource in lib/backend-stack.js
+// example resource in lib/mini-pos-cdk-stack.js
 test('SQS Queue Created', () => {
 //   const app = new cdk.App();
 //   // WHEN
-//   const stack = new Backend.BackendStack(app, 'MyTestStack');
+//   const stack = new MiniPosCdk.MiniPosCdkStack(app, 'MyTestStack');
 //   // THEN
 //   const template = Template.fromStack(stack);
 

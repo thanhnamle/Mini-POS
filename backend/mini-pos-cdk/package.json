@@ -1,8 +1,8 @@
 {
-  "name": "backend",
+  "name": "mini-pos-cdk",
   "version": "0.1.0",
   "bin": {
-    "backend": "bin/backend.js"
+    "mini-pos-cdk": "bin/mini-pos-cdk.js"
   },
   "scripts": {
     "build": "echo \"The build step is not required when using JavaScript!\" && exit 0",

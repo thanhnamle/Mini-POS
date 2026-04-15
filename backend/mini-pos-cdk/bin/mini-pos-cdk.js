@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 const cdk = require('aws-cdk-lib/core');
-const { BackendStack } = require('../lib/backend-stack');
+const { MiniPosCdkStack } = require('../lib/mini-pos-cdk-stack');
 
 const app = new cdk.App();
-new BackendStack(app, 'BackendStack', {
+new MiniPosCdkStack(app, 'MiniPosCdkStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
