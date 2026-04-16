@@ -32,8 +32,63 @@ class MiniPosCdkStack extends Stack {
       },
     });
 
+    const createProductLambda = new lambda.Function(this, 'CreateProductLambda', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'createProduct.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
+      environment: {
+        PRODUCTS_TABLE: productsTable.tableName,
+      },
+    });
+
+    const updateProductLambda = new lambda.Function(this, 'UpdateProductLambda', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'updateProduct.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
+      environment: {
+        PRODUCTS_TABLE: productsTable.tableName,
+      },
+    });
+
+    const deleteProductLambda = new lambda.Function(this, 'DeleteProductLambda', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'deleteProduct.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
+      environment: {
+        PRODUCTS_TABLE: productsTable.tableName,
+      },
+    });
+
+    // Orders Lambda functions 
+    const getOrdersLambda = new lambda.Function(this, 'GetOrdersLambda', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'getOrders.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
+      environment: {
+        ORDERS_TABLE: ordersTable.tableName,
+      },
+    });
+
+    const createOrderLambda = new lambda.Function(this, 'CreateOrderLambda', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'createOrder.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
+      environment: {
+        ORDERS_TABLE: ordersTable.tableName,
+      },
+    });
+
     // Grant the Lambda function read permissions on the products table
     productsTable.grantReadData(getProductsLambda);
+    // Grant the Lambda function covers PutItem, UpdateItem, and DeleteItem permissions on the products table
+    productsTable.grantWriteData(createProductLambda);
+    productsTable.grantWriteData(updateProductLambda);
+    productsTable.grantWriteData(deleteProductLambda);
+
+    // Grant the Lambda function read permissions on the orders table
+    ordersTable.grantReadData(getOrdersLambda);
+    // Grant the Lambda function write permissions on the orders table
+    ordersTable.grantWriteData(createOrderLambda);
 
     // 3. Create API Gateway REST API
     const api = new apigateway.RestApi(this, 'MiniPosApi', {
@@ -46,9 +101,21 @@ class MiniPosCdkStack extends Stack {
     });
 
     // 4. Define API resources and methods
+    // Product Routes (/products)
     const productsResource = api.root.addResource('products');
-    const getProductsIntegration = new apigateway.LambdaIntegration(getProductsLambda);
-    productsResource.addMethod('GET', getProductsIntegration);
+    productsResource.addMethod('GET', new apigateway.LambdaIntegration(getProductsLambda));
+    productsResource.addMethod('POST', new apigateway.LambdaIntegration(createProductLambda));
+
+    // Single Product Routes (/products/{productId})
+    const singleProductResource = productsResource.addResource('{productId}');
+    singleProductResource.addMethod('PUT', new apigateway.LambdaIntegration(updateProductLambda));
+    singleProductResource.addMethod('DELETE', new apigateway.LambdaIntegration(deleteProductLambda));
+
+    // Order Routes (/orders)
+    const ordersResource = api.root.addResource('orders');
+    ordersResource.addMethod('GET', new apigateway.LambdaIntegration(getOrdersLambda));
+    ordersResource.addMethod('POST', new apigateway.LambdaIntegration(createOrderLambda));
+
   }
 }
 
