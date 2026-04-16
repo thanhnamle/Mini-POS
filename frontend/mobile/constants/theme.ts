@@ -1,41 +1,31 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import { Platform } from 'react-native';
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+import type { Theme } from '@react-navigation/native';
 
 export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-  },
+  background: '#0f1115',
+  screen: '#f7f3ee',
+  surface: '#fffdf9',
+  surfaceMuted: '#f4efe8',
+  primary: '#07294d',
+  primaryPressed: '#0c3969',
+  accent: '#4d8f88',
+  text: '#16181d',
+  textMuted: '#686f7c',
+  textSubtle: '#8f95a1',
+  border: '#e8e1d8',
+  inputBorder: '#e5ddd4',
+  placeholder: '#b4b9c3',
+  icon: '#6d7480',
+  white: '#ffffff',
+  danger: '#b55252',
+  success: '#2f7d62',
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
@@ -51,3 +41,52 @@ export const Fonts = Platform.select({
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
+
+export const Spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+  hero: 40,
+};
+
+export const Radius = {
+  sm: 10,
+  md: 14,
+  lg: 18,
+  xl: 24,
+  pill: 999,
+};
+
+export const AppNavigationTheme: Theme = {
+  dark: false,
+  colors: {
+    primary: Colors.primary,
+    background: Colors.screen,
+    card: Colors.surface,
+    text: Colors.text,
+    border: Colors.border,
+    notification: Colors.accent,
+  },
+  fonts: {
+    regular: {
+      fontFamily: Fonts.sans,
+      fontWeight: '400',
+    },
+    medium: {
+      fontFamily: Fonts.sans,
+      fontWeight: '500',
+    },
+    bold: {
+      fontFamily: Fonts.sans,
+      fontWeight: '700',
+    },
+    heavy: {
+      fontFamily: Fonts.sans,
+      fontWeight: '800',
+    },
+  },
+};
