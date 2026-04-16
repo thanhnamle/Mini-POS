@@ -28,7 +28,7 @@ class MiniPosCdkStack extends Stack {
       handler: 'getProducts.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
-        PRODUCTS_TABLE: productsTable.tableName,
+        PRODUCTS_TABLE_NAME: productsTable.tableName,
       },
     });
 
@@ -37,7 +37,7 @@ class MiniPosCdkStack extends Stack {
       handler: 'createProduct.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
-        PRODUCTS_TABLE: productsTable.tableName,
+        PRODUCTS_TABLE_NAME: productsTable.tableName,
       },
     });
 
@@ -46,7 +46,7 @@ class MiniPosCdkStack extends Stack {
       handler: 'updateProduct.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
-        PRODUCTS_TABLE: productsTable.tableName,
+        PRODUCTS_TABLE_NAME: productsTable.tableName,
       },
     });
 
@@ -55,7 +55,7 @@ class MiniPosCdkStack extends Stack {
       handler: 'deleteProduct.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
-        PRODUCTS_TABLE: productsTable.tableName,
+        PRODUCTS_TABLE_NAME: productsTable.tableName,
       },
     });
 
@@ -65,7 +65,7 @@ class MiniPosCdkStack extends Stack {
       handler: 'getOrders.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
-        ORDERS_TABLE: ordersTable.tableName,
+        ORDERS_TABLE_NAME: ordersTable.tableName,
       },
     });
 
@@ -74,7 +74,7 @@ class MiniPosCdkStack extends Stack {
       handler: 'createOrder.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
-        ORDERS_TABLE: ordersTable.tableName,
+        ORDERS_TABLE_NAME: ordersTable.tableName,
       },
     });
 

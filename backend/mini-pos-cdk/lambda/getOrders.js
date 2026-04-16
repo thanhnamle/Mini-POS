@@ -23,12 +23,17 @@ exports.handler = async (event) => {
         };
     } catch (error) {
         console.error('Error fetching orders:', error);
+
         return {
             statusCode: 500,
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ error: 'Failed to fetch orders' }),
+            body: JSON.stringify({
+                message: 'Failed to fetch orders',
+                errorDetails: error.message,
+                errorStack: error.stack
+            }),
         };
     }
 }

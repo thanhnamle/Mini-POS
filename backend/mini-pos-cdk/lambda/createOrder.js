@@ -12,7 +12,7 @@ exports.handler = async (event) => {
         const requestBody = JSON.parse(event.body);
 
         // Calculate the total amount from the items array
-        const totalAmount = 0;
+        let totalAmount = 0;
         if (requestBody.items && Array.isArray(requestBody.items)) {
             requestBody.items.forEach(item => {
                 totalAmount += item.price * item.quantity;
@@ -43,13 +43,18 @@ exports.handler = async (event) => {
             body: JSON.stringify(newOrder),
         };
     } catch (error) {
-        console.error('Error creating order:', error);
+    console.error("Error processing order:", error);
+    
         return {
             statusCode: 500,
-            headers: {
-                'Content-Type': 'application/json',
+            headers: { 
+                "Content-Type": "application/json"
             },
-            body: JSON.stringify({ error: 'Failed to create order' }),
+            body: JSON.stringify({ 
+                message: "Failed to create order",
+                errorDetails: error.message,
+                errorStack: error.stack
+            }),
         };
     }
 };

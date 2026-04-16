@@ -1,5 +1,6 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { error } = require('console');
 const crypto = require('crypto');
 
 const dbClient = new DynamoDBClient({});
@@ -20,7 +21,7 @@ exports.handler = async (event) => {
             category: requireBody.category || 'General',
         };
 
-        const command = new ScanCommand({
+        const command = new PutCommand({
             TableName: tableName,
             Item: newProduct,
         });
@@ -36,12 +37,17 @@ exports.handler = async (event) => {
         };
     } catch (error) {
         console.error('Error creating product:', error);
+
         return {
             statusCode: 500,
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ error: 'Failed to create product' }),
+            body: JSON.stringify({
+                message: 'Failed to create product',
+                errorDetails: error.message,
+                errorStack: error.stack,
+            }),
         };
     }
 };
