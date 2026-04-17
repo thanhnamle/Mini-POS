@@ -1,4 +1,4 @@
-const { Stack, RemovalPolicy } = require('aws-cdk-lib/core');
+const { Stack, RemovalPolicy, CfnOutput } = require('aws-cdk-lib');
 const dynamodb = require('aws-cdk-lib/aws-dynamodb');
 const lambda = require('aws-cdk-lib/aws-lambda');
 const apigateway = require('aws-cdk-lib/aws-apigateway');
@@ -115,6 +115,11 @@ class MiniPosCdkStack extends Stack {
     const ordersResource = api.root.addResource('orders');
     ordersResource.addMethod('GET', new apigateway.LambdaIntegration(getOrdersLambda));
     ordersResource.addMethod('POST', new apigateway.LambdaIntegration(createOrderLambda));
+
+    new CfnOutput(this, 'MiniPosApiUrl', {
+      value: api.url,
+      description: 'Base URL for the Mini POS API Gateway deployment.',
+    });
 
   }
 }

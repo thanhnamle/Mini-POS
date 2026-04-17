@@ -12,6 +12,8 @@ exports.handler = async (event) => {
     // Extract the productId from the URL path
     const productId = event.pathParameters.productId;
     const requestBody = JSON.parse(event.body);
+    const stock = Number(requestBody.stock ?? requestBody.inventory ?? 0);
+    const description = requestBody.description ?? '';
 
     // Update the item in DynamoDB
     const command = new UpdateCommand({
@@ -20,14 +22,16 @@ exports.handler = async (event) => {
         productId: productId,
       },
       // Using expression attributes to avoid reserved word conflicts (like 'name')
-      UpdateExpression: "set #n = :n, price = :p, category = :c",
+      UpdateExpression: "set #n = :n, price = :p, category = :c, stock = :s, description = :d",
       ExpressionAttributeNames: {
         "#n": "name",
       },
       ExpressionAttributeValues: {
         ":n": requestBody.name,
-        ":p": requestBody.price,
-        ":c": requestBody.category,
+        ":p": Number(requestBody.price || 0),
+        ":c": requestBody.category || 'General',
+        ":s": stock,
+        ":d": description,
       },
       ReturnValues: "ALL_NEW", // Returns the item as it appears after the update
     });

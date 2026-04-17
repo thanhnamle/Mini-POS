@@ -1,6 +1,5 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
-const { error } = require('console');
 const crypto = require('crypto');
 
 const dbClient = new DynamoDBClient({});
@@ -11,14 +10,16 @@ const tableName = process.env.PRODUCTS_TABLE_NAME;
 exports.handler = async (event) => {
     try {
         // Parse the incoming request body
-        const requireBody = JSON.parse(event.body);
+        const requestBody = JSON.parse(event.body);
 
         // Generate a unique ID for the new product
         const newProduct = {
             productId: crypto.randomUUID(),
-            name: requireBody.name,
-            price: requireBody.price,
-            category: requireBody.category || 'General',
+            name: requestBody.name,
+            price: Number(requestBody.price || 0),
+            category: requestBody.category || 'General',
+            stock: Number(requestBody.stock || requestBody.inventory || 0),
+            description: requestBody.description || '',
         };
 
         const command = new PutCommand({

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const cdk = require('aws-cdk-lib/core');
+const cdk = require('aws-cdk-lib');
 const { MiniPosCdkStack } = require('../lib/mini-pos-cdk-stack');
 
 const app = new cdk.App();

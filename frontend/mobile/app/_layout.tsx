@@ -1,28 +1,22 @@
-import { ThemeProvider } from '@react-navigation/native';
+import React from 'react';
 import { Stack } from 'expo-router';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { AppNavigationTheme } from '@/constants/theme';
-
-export const unstable_settings = {
-  anchor: '(auth)',
-};
+import { CartProvider } from '../store/CartContext';
+import { COLORS } from '../constants/theme';
 
 export default function RootLayout() {
   return (
-    <ThemeProvider value={AppNavigationTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(admin)/dashboard" options={{ headerShown: false }} />
-        <Stack.Screen name="(admin)/settings" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: 'modal', title: 'Merchant Access' }}
-        />
-      </Stack>
-      <StatusBar style="dark" />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <CartProvider>
+        <StatusBar style="dark" backgroundColor={COLORS.background} />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: COLORS.background } }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)/login" />
+          <Stack.Screen name="(admin)" />
+          <Stack.Screen name="(cashier)" />
+        </Stack>
+      </CartProvider>
+    </SafeAreaProvider>
   );
 }

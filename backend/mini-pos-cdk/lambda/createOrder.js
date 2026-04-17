@@ -19,12 +19,17 @@ exports.handler = async (event) => {
             });
         }
 
+        const createdAt = new Date().toISOString();
+
         // Create the new order object
         const newOrder = {
             orderId: crypto.randomUUID(),
-            items: requestBody.items,
+            items: Array.isArray(requestBody.items) ? requestBody.items : [],
+            total: totalAmount,
             totalAmount: totalAmount,
-            timestamp: new Date().toISOString(),
+            status: requestBody.status || 'pending',
+            createdAt,
+            timestamp: createdAt,
         };
 
         // Save the new order to DynamoDB
