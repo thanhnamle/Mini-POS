@@ -263,7 +263,7 @@ export default function WelcomeScreen() {
               <Text style={styles.eyebrowText}>CURATED COMMERCE</Text>
             </View>
 
-            <Text style={styles.headline}>The modern{'\n'}retail OS.</Text>
+            <Text style={styles.headline}>The modern{'\n'}retail OS</Text>
 
             <Text style={styles.subheadline}>
               Built for boutiques, galleries, and studios that refuse to compromise on experience.

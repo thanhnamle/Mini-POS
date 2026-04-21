@@ -17,7 +17,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
-const ROLES = ['Cashier', 'Store Manager', 'Admin', 'Owner'];
 const FORM_CARD_MARGIN = 20;
 const SWITCHER_PADDING = 24;
 
@@ -29,8 +28,6 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [roleOpen, setRoleOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState('');
 
   const [nameFocused, setNameFocused] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
@@ -40,46 +37,12 @@ export default function SignUpScreen() {
   const contentFade = useRef(new Animated.Value(0)).current;
   const contentSlide = useRef(new Animated.Value(30)).current;
 
-  // Dropdown height animation
-  const dropdownAnim = useRef(new Animated.Value(0)).current;
-
   useEffect(() => {
     Animated.parallel([
       Animated.timing(contentFade, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.timing(contentSlide, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start();
   }, []);
-
-  const toggleDropdown = () => {
-    const toValue = roleOpen ? 0 : 1;
-    setRoleOpen(!roleOpen);
-    Animated.spring(dropdownAnim, {
-      toValue,
-      useNativeDriver: false,
-      damping: 20,
-      stiffness: 180,
-    }).start();
-  };
-
-  const selectRole = (role: string) => {
-    setSelectedRole(role);
-    setRoleOpen(false);
-    Animated.timing(dropdownAnim, {
-      toValue: 0,
-      duration: 180,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const dropdownHeight = dropdownAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, ROLES.length * 48],
-  });
-
-  const dropdownOpacity = dropdownAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0, 0, 1],
-  });
 
   return (
     <View style={s.screen}>
@@ -116,7 +79,7 @@ export default function SignUpScreen() {
                   <View style={[s.decoLine, {width: '10%', marginTop: 6}]} />
               </View>
 
-              <Text style={s.panelHeadline}>Create account.</Text>
+              <Text style={s.panelHeadline}>Create Account</Text>
               <Text style={s.panelSub}>Configure your workspace profile</Text>
             </View>
 
@@ -167,61 +130,6 @@ export default function SignUpScreen() {
                     keyboardType="email-address"
                   />
                 </View>
-              </View>
-
-              {/* Primary role dropdown */}
-              <View style={s.fieldGroup}>
-                <Text style={s.fieldLabel}>PRIMARY ROLE</Text>
-                <Pressable
-                  style={[s.inputWrap, roleOpen && s.inputWrapFocused]}
-                  onPress={toggleDropdown}
-                >
-                  <Ionicons
-                    name="briefcase-outline"
-                    size={18}
-                    color={roleOpen ? '#1A1814' : '#A09890'}
-                    style={s.inputIcon}
-                  />
-                  <Text style={[s.dropdownValue, !selectedRole && s.dropdownPlaceholder]}>
-                    {selectedRole || 'Select a role...'}
-                  </Text>
-                  <Animated.View
-                    style={{
-                      transform: [
-                        {
-                          rotate: dropdownAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: ['0deg', '180deg'],
-                          }),
-                        },
-                      ],
-                    }}
-                  >
-                    <Ionicons name="chevron-down" size={18} color="#A09890" />
-                  </Animated.View>
-                </Pressable>
-
-                {/* Dropdown list */}
-                <Animated.View style={[s.dropdownList, { height: dropdownHeight, opacity: dropdownOpacity }]}>
-                  {ROLES.map((role, i) => (
-                    <Pressable
-                      key={role}
-                      style={[
-                        s.dropdownItem,
-                        i < ROLES.length - 1 && s.dropdownItemBorder,
-                        selectedRole === role && s.dropdownItemSelected,
-                      ]}
-                      onPress={() => selectRole(role)}
-                    >
-                      <Text style={[s.dropdownItemText, selectedRole === role && s.dropdownItemTextSelected]}>
-                        {role}
-                      </Text>
-                      {selectedRole === role && (
-                        <Ionicons name="checkmark" size={15} color="#1A1814" />
-                      )}
-                    </Pressable>
-                  ))}
-                </Animated.View>
               </View>
 
               {/* Password field */}
@@ -568,4 +476,4 @@ const s = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
-});
+});

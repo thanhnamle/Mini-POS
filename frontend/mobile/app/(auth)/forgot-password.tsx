@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 const FORM_CARD_MARGIN = 20;
-const SWITCHER_PADDING = 24;
+const SWITCHER_PADDING = 30;
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -85,7 +85,7 @@ export default function ForgotPasswordScreen() {
               </View>
 
               <Text style={s.panelHeadline}>
-                {isSent ? 'Check your\nemail.' : 'Forgot\npassword?'}
+                {isSent ? 'Check your\nemail.' : 'Forgot password?'}
               </Text>
               <Text style={s.panelSub}>
                 {isSent 
