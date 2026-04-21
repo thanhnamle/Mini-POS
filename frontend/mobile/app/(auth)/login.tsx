@@ -14,7 +14,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 const FORM_CARD_MARGIN = 20;
@@ -44,7 +44,7 @@ export default function LoginScreen() {
       Animated.timing(contentFade, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.timing(contentSlide, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [contentFade, contentSlide]);
 
   const switchRole = (r: Role) => {
     setRole(r);
@@ -54,6 +54,15 @@ export default function LoginScreen() {
       damping: 20,
       stiffness: 150,
     }).start();
+  };
+
+  const handleSignIn = () => {
+    if (role === 'cashier') {
+      router.replace('/(cashier)');
+      return;
+    }
+
+    router.replace('/(admin)');
   };
 
   return (
@@ -190,7 +199,7 @@ export default function LoginScreen() {
               <Pressable
                 style={s.primaryBtn}
                 android_ripple={{ color: 'rgba(223, 90, 90, 0.12)', borderless: false }}
-                // onPress={() => router.push('/(tabs)')}
+                onPress={handleSignIn}
               >
                 <Text style={s.primaryBtnText}>SIGN IN</Text>
                 <View style={s.primaryBtnArrow}>

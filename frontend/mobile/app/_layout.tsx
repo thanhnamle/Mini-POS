@@ -33,6 +33,18 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
+          name="(cashier)"
+          options={{
+            animation: 'fade_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(admin)"
+          options={{
+            animation: 'fade_from_bottom',
+          }}
+        />
+        <Stack.Screen
           name="modal"
           options={{
             presentation: 'transparentModal',

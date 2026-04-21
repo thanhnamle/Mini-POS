@@ -193,6 +193,7 @@ export default function SignUpScreen() {
               <Pressable
                 style={s.primaryBtn}
                 android_ripple={{ color: 'rgba(223, 90, 90, 0.12)', borderless: false }}
+                onPress={() => router.push('/(cashier)/index')}
               >
                 <Text style={s.primaryBtnText}>CREATE ACCOUNT</Text>
                 <View style={s.primaryBtnArrow}>
