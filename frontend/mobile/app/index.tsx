@@ -233,7 +233,7 @@ export default function WelcomeScreen() {
 
           {/* ── Top bar ── */}
           <View style={styles.topBar}>
-            <Text style={styles.brand}>ATELIER</Text>
+            <Text style={styles.brand}>ATELIER.</Text>
             <View style={styles.topBarPill}>
               <View style={styles.topBarDot} />
               <Text style={styles.topBarPillText}>POS</Text>

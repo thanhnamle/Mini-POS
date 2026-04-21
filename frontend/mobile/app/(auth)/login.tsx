@@ -83,8 +83,7 @@ export default function LoginScreen() {
             {/* ── Top Panel (BRAND & HEADLINE) - Centered ── */}
             <View style={s.topPanel}>
               <View style={s.brandRow}>
-                <Text style={s.brand}>ATELIER</Text>
-                <View style={s.brandDot} />
+                <Text style={s.brand}>ATELIER.</Text>
               </View>
               
               <View style={s.decoLines}>
@@ -156,7 +155,7 @@ export default function LoginScreen() {
               <View style={s.fieldGroup}>
                 <View style={s.fieldLabelRow}>
                   <Text style={s.fieldLabel}>PASSWORD</Text>
-                  <Pressable>
+                  <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
                     <Text style={s.forgotText}>Forgot password?</Text>
                   </Pressable>
                 </View>
@@ -272,13 +271,6 @@ const s = StyleSheet.create({
     fontSize: 16,
     fontWeight: '900',
     letterSpacing: -0.5,
-  },
-  brandDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#C8F0B0', // Green dot
-    marginTop: 2,
   },
   decoLines: {
     marginBottom: 16,

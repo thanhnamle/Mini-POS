@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Dimensions,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,13 +14,16 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+const { width } = Dimensions.get('window');
 const ROLES = ['Cashier', 'Store Manager', 'Admin', 'Owner'];
 const FORM_CARD_MARGIN = 20;
+const SWITCHER_PADDING = 24;
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -33,22 +37,16 @@ export default function SignUpScreen() {
   const [passwordFocused, setPasswordFocused] = useState(false);
 
   // Entrance animations
-  const panelFade = useRef(new Animated.Value(0)).current;
-  const panelSlide = useRef(new Animated.Value(-20)).current;
-  const formFade = useRef(new Animated.Value(0)).current;
-  const formSlide = useRef(new Animated.Value(28)).current;
+  const contentFade = useRef(new Animated.Value(0)).current;
+  const contentSlide = useRef(new Animated.Value(30)).current;
 
   // Dropdown height animation
   const dropdownAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(panelFade, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.timing(panelSlide, { toValue: 0, duration: 500, useNativeDriver: true }),
-    ]).start();
-    Animated.parallel([
-      Animated.timing(formFade, { toValue: 1, duration: 540, delay: 160, useNativeDriver: true }),
-      Animated.timing(formSlide, { toValue: 0, duration: 540, delay: 160, useNativeDriver: true }),
+      Animated.timing(contentFade, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(contentSlide, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start();
   }, []);
 
@@ -85,224 +83,228 @@ export default function SignUpScreen() {
 
   return (
     <View style={s.screen}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
-      {/* ── Dark top panel ── */}
-      <Animated.View
-        style={[s.topPanel, { opacity: panelFade, transform: [{ translateY: panelSlide }] }]}
-      >
-        <SafeAreaView edges={['top']}>
-          <View style={s.topPanelInner}>
-            {/* Brand */}
-            <View style={s.brandRow}>
-              <Text style={s.brand}>ATELIER</Text>
-              <View style={s.brandDot} />
-            </View>
+      {/* ── Background texture elements ── */}
+      <View style={s.orb1} />
+      <View style={s.orb2} />
 
-            <Text style={s.panelHeadline}>Create{'\n'}account.</Text>
-            <Text style={s.panelSub}>Configure your workspace profile</Text>
-          </View>
-        </SafeAreaView>
-      </Animated.View>
-
-      {/* ── Form card ── */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={20}
       >
         <ScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={[s.scrollContent, { paddingTop: insets.top + 20 }]}
         >
           <Animated.View
-            style={[s.formCard, { opacity: formFade, transform: [{ translateY: formSlide }] }]}
+            style={[
+              s.animatedContent,
+              { opacity: contentFade, transform: [{ translateY: contentSlide }] },
+            ]}
           >
-
-            {/* Full name */}
-            <View style={s.fieldGroup}>
-              <Text style={s.fieldLabel}>FULL NAME</Text>
-              <View style={[s.inputWrap, nameFocused && s.inputWrapFocused]}>
-                <Ionicons
-                  name="person-outline"
-                  size={16}
-                  color={nameFocused ? '#1A1814' : '#A09890'}
-                  style={s.inputIcon}
-                />
-                <TextInput
-                  style={s.input}
-                  placeholder="Jane Doe"
-                  placeholderTextColor="#C0B8B0"
-                  value={fullName}
-                  onChangeText={setFullName}
-                  onFocus={() => setNameFocused(true)}
-                  onBlur={() => setNameFocused(false)}
-                  autoCapitalize="words"
-                />
+            {/* ── Top Panel (Centered Header) ── */}
+            <View style={s.topPanel}>
+              <View style={s.brandRow}>
+                <Text style={s.brand}>ATELIER.</Text>
               </View>
+              
+              <View style={s.decoLines}>
+                  <View style={[s.decoLine, {width: '15%'}]} />
+                  <View style={[s.decoLine, {width: '10%', marginTop: 6}]} />
+              </View>
+
+              <Text style={s.panelHeadline}>Create account.</Text>
+              <Text style={s.panelSub}>Configure your workspace profile</Text>
             </View>
 
-            {/* Work email */}
-            <View style={s.fieldGroup}>
-              <Text style={s.fieldLabel}>WORK EMAIL</Text>
-              <View style={[s.inputWrap, emailFocused && s.inputWrapFocused]}>
-                <Ionicons
-                  name="mail-outline"
-                  size={16}
-                  color={emailFocused ? '#1A1814' : '#A09890'}
-                  style={s.inputIcon}
-                />
-                <TextInput
-                  style={s.input}
-                  placeholder="jane@atelierpos.com"
-                  placeholderTextColor="#C0B8B0"
-                  value={email}
-                  onChangeText={setEmail}
-                  onFocus={() => setEmailFocused(true)}
-                  onBlur={() => setEmailFocused(false)}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                />
+            {/* ── FORM CARD ── */}
+            <View style={s.formCard}>
+              {/* Full name field */}
+              <View style={s.fieldGroup}>
+                <Text style={s.fieldLabel}>FULL NAME</Text>
+                <View style={[s.inputWrap, nameFocused && s.inputWrapFocused]}>
+                  <Ionicons
+                    name="person-outline"
+                    size={18}
+                    color={nameFocused ? '#1A1814' : '#A09890'}
+                    style={s.inputIcon}
+                  />
+                  <TextInput
+                    style={s.input}
+                    placeholder="Jane Doe"
+                    placeholderTextColor="#C0B8B0"
+                    value={fullName}
+                    onChangeText={setFullName}
+                    onFocus={() => setNameFocused(true)}
+                    onBlur={() => setNameFocused(false)}
+                    autoCapitalize="words"
+                  />
+                </View>
               </View>
-            </View>
 
-            {/* Primary role dropdown */}
-            <View style={s.fieldGroup}>
-              <Text style={s.fieldLabel}>PRIMARY ROLE</Text>
-              <Pressable
-                style={[s.inputWrap, s.dropdownTrigger, roleOpen && s.inputWrapFocused]}
-                onPress={toggleDropdown}
-              >
-                <Ionicons
-                  name="briefcase-outline"
-                  size={16}
-                  color={roleOpen ? '#1A1814' : '#A09890'}
-                  style={s.inputIcon}
-                />
-                <Text style={[s.dropdownValue, !selectedRole && s.dropdownPlaceholder]}>
-                  {selectedRole || 'Select a role...'}
-                </Text>
-                <Animated.View
-                  style={{
-                    transform: [
-                      {
-                        rotate: dropdownAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: ['0deg', '180deg'],
-                        }),
-                      },
-                    ],
-                  }}
+              {/* Work email field */}
+              <View style={s.fieldGroup}>
+                <Text style={s.fieldLabel}>WORK EMAIL</Text>
+                <View style={[s.inputWrap, emailFocused && s.inputWrapFocused]}>
+                  <Ionicons
+                    name="mail-outline"
+                    size={18}
+                    color={emailFocused ? '#1A1814' : '#A09890'}
+                    style={s.inputIcon}
+                  />
+                  <TextInput
+                    style={s.input}
+                    placeholder="jane@atelierpos.com"
+                    placeholderTextColor="#C0B8B0"
+                    value={email}
+                    onChangeText={setEmail}
+                    onFocus={() => setEmailFocused(true)}
+                    onBlur={() => setEmailFocused(false)}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                  />
+                </View>
+              </View>
+
+              {/* Primary role dropdown */}
+              <View style={s.fieldGroup}>
+                <Text style={s.fieldLabel}>PRIMARY ROLE</Text>
+                <Pressable
+                  style={[s.inputWrap, roleOpen && s.inputWrapFocused]}
+                  onPress={toggleDropdown}
                 >
-                  <Ionicons name="chevron-down" size={16} color="#A09890" />
+                  <Ionicons
+                    name="briefcase-outline"
+                    size={18}
+                    color={roleOpen ? '#1A1814' : '#A09890'}
+                    style={s.inputIcon}
+                  />
+                  <Text style={[s.dropdownValue, !selectedRole && s.dropdownPlaceholder]}>
+                    {selectedRole || 'Select a role...'}
+                  </Text>
+                  <Animated.View
+                    style={{
+                      transform: [
+                        {
+                          rotate: dropdownAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ['0deg', '180deg'],
+                          }),
+                        },
+                      ],
+                    }}
+                  >
+                    <Ionicons name="chevron-down" size={18} color="#A09890" />
+                  </Animated.View>
+                </Pressable>
+
+                {/* Dropdown list */}
+                <Animated.View style={[s.dropdownList, { height: dropdownHeight, opacity: dropdownOpacity }]}>
+                  {ROLES.map((role, i) => (
+                    <Pressable
+                      key={role}
+                      style={[
+                        s.dropdownItem,
+                        i < ROLES.length - 1 && s.dropdownItemBorder,
+                        selectedRole === role && s.dropdownItemSelected,
+                      ]}
+                      onPress={() => selectRole(role)}
+                    >
+                      <Text style={[s.dropdownItemText, selectedRole === role && s.dropdownItemTextSelected]}>
+                        {role}
+                      </Text>
+                      {selectedRole === role && (
+                        <Ionicons name="checkmark" size={15} color="#1A1814" />
+                      )}
+                    </Pressable>
+                  ))}
                 </Animated.View>
+              </View>
+
+              {/* Password field */}
+              <View style={s.fieldGroup}>
+                <Text style={s.fieldLabel}>CREATE PASSWORD</Text>
+                <View style={[s.inputWrap, passwordFocused && s.inputWrapFocused]}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={18}
+                    color={passwordFocused ? '#1A1814' : '#A09890'}
+                    style={s.inputIcon}
+                  />
+                  <TextInput
+                    style={s.input}
+                    placeholder="••••••••"
+                    placeholderTextColor="#C0B8B0"
+                    value={password}
+                    onChangeText={setPassword}
+                    onFocus={() => setPasswordFocused(true)}
+                    onBlur={() => setPasswordFocused(false)}
+                    secureTextEntry={!showPassword}
+                  />
+                  <Pressable onPress={() => setShowPassword((v) => !v)} style={s.eyeBtn}>
+                    <Ionicons
+                      name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                      size={18}
+                      color="#A09890"
+                    />
+                  </Pressable>
+                </View>
+
+                {/* Password strength bar */}
+                {password.length > 0 && (
+                  <View style={s.strengthRow}>
+                    {[0, 1, 2, 3].map((i) => (
+                      <View
+                        key={i}
+                        style={[
+                          s.strengthSegment,
+                          i < Math.min(Math.floor(password.length / 3), 4) && s.strengthSegmentFill,
+                          i < Math.min(Math.floor(password.length / 3), 4) &&
+                            password.length >= 9 &&
+                            s.strengthSegmentStrong,
+                        ]}
+                      />
+                    ))}
+                    <Text style={s.strengthLabel}>
+                      {password.length < 4
+                        ? 'Weak'
+                        : password.length < 7
+                        ? 'Fair'
+                        : password.length < 9
+                        ? 'Good'
+                        : 'Strong'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Create account button */}
+              <Pressable
+                style={s.primaryBtn}
+                android_ripple={{ color: 'rgba(223, 90, 90, 0.12)', borderless: false }}
+              >
+                <Text style={s.primaryBtnText}>CREATE ACCOUNT</Text>
+                <View style={s.primaryBtnArrow}>
+                  <Ionicons name="person-add" size={14} color="#1A1814" />
+                </View>
               </Pressable>
 
-              {/* Dropdown list */}
-              <Animated.View style={[s.dropdownList, { height: dropdownHeight, opacity: dropdownOpacity }]}>
-                {ROLES.map((role, i) => (
-                  <Pressable
-                    key={role}
-                    style={[
-                      s.dropdownItem,
-                      i < ROLES.length - 1 && s.dropdownItemBorder,
-                      selectedRole === role && s.dropdownItemSelected,
-                    ]}
-                    onPress={() => selectRole(role)}
-                  >
-                    <Text style={[s.dropdownItemText, selectedRole === role && s.dropdownItemTextSelected]}>
-                      {role}
-                    </Text>
-                    {selectedRole === role && (
-                      <Ionicons name="checkmark" size={15} color="#1A1814" />
-                    )}
-                  </Pressable>
-                ))}
-              </Animated.View>
-            </View>
-
-            {/* Password */}
-            <View style={s.fieldGroup}>
-              <Text style={s.fieldLabel}>CREATE PASSWORD</Text>
-              <View style={[s.inputWrap, passwordFocused && s.inputWrapFocused]}>
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={16}
-                  color={passwordFocused ? '#1A1814' : '#A09890'}
-                  style={s.inputIcon}
-                />
-                <TextInput
-                  style={s.input}
-                  placeholder="••••••••"
-                  placeholderTextColor="#C0B8B0"
-                  value={password}
-                  onChangeText={setPassword}
-                  onFocus={() => setPasswordFocused(true)}
-                  onBlur={() => setPasswordFocused(false)}
-                  secureTextEntry={!showPassword}
-                />
-                <Pressable onPress={() => setShowPassword((v) => !v)} style={s.eyeBtn}>
-                  <Ionicons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={18}
-                    color="#A09890"
-                  />
+              {/* Sign in link */}
+              <View style={s.switchAuthRow}>
+                <Text style={s.switchAuthText}>Already have an account? </Text>
+                <Pressable onPress={() => router.back()}>
+                  <Text style={s.switchAuthLink}>Sign In</Text>
                 </Pressable>
               </View>
 
-              {/* Password strength bar */}
-              {password.length > 0 && (
-                <View style={s.strengthRow}>
-                  {[0, 1, 2, 3].map((i) => (
-                    <View
-                      key={i}
-                      style={[
-                        s.strengthSegment,
-                        i < Math.min(Math.floor(password.length / 3), 4) && s.strengthSegmentFill,
-                        i < Math.min(Math.floor(password.length / 3), 4) &&
-                          password.length >= 9 &&
-                          s.strengthSegmentStrong,
-                      ]}
-                    />
-                  ))}
-                  <Text style={s.strengthLabel}>
-                    {password.length < 4
-                      ? 'Weak'
-                      : password.length < 7
-                      ? 'Fair'
-                      : password.length < 9
-                      ? 'Good'
-                      : 'Strong'}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Create account button */}
-            <Pressable
-              style={s.primaryBtn}
-              android_ripple={{ color: 'rgba(255,255,255,0.12)', borderless: false }}
-            //   onPress={() => router.push('/(tabs)')}
-            >
-              <Text style={s.primaryBtnText}>Create Account</Text>
-              <View style={s.primaryBtnArrow}>
-                <Ionicons name="arrow-forward" size={15} color="#1A1814" />
-              </View>
-            </Pressable>
-
-            {/* Sign in link */}
-            <View style={s.switchAuthRow}>
-              <Text style={s.switchAuthText}>Already have an account? </Text>
-              <Pressable onPress={() => router.back()}>
-                <Text style={s.switchAuthLink}>Sign In</Text>
+              <Pressable style={s.backBtn} onPress={() => router.back()}>
+                <Ionicons name="arrow-back" size={18} color="#8C8478" />
+                <Text style={s.backBtnText}>Back to Login</Text>
               </Pressable>
             </View>
-
-            {/* Back button */}
-            <Pressable style={s.backBtn} onPress={() => router.back()}>
-                <Ionicons name="arrow-back" size={18} color="#8C8478" />
-                <Text style={s.backBtnText}>Back to SignIn</Text>
-            </Pressable>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -313,30 +315,44 @@ export default function SignUpScreen() {
 const s = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#1A1814',
+    backgroundColor: '#EDE9E2',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingBottom: 40,
+  },
+  animatedContent: {
+    flex: 1,
   },
 
-  // Top dark panel
+  // Texture Orbs
+  orb1: {
+    position: 'absolute',
+    top: -80,
+    right: -80,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: '#EAE5DC',
+    opacity: 0.7,
+  },
+  orb2: {
+    position: 'absolute',
+    bottom: 200,
+    left: -100,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: '#E8E2D8',
+    opacity: 0.5,
+  },
+
+  // Top panel (Centered Header)
   topPanel: {
-    backgroundColor: '#1A1814',
-    paddingBottom: 28,
-  },
-  topPanelInner: {
-    paddingHorizontal: 28,
-    paddingTop: 10,
-  },
-  backBtn: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    gap: 8,
-    padding: 10,
-  },
-  backBtnText: {
-    color: '#8C8478',
-    fontSize: 14,
-    fontWeight: '600',
+    marginBottom: 40,
+    paddingHorizontal: 28,
   },
   brandRow: {
     flexDirection: 'row',
@@ -345,102 +361,104 @@ const s = StyleSheet.create({
     marginBottom: 20,
   },
   brand: {
-    color: '#F4F1EC',
-    fontSize: 18,
+    color: '#1A1814',
+    fontSize: 16,
     fontWeight: '900',
     letterSpacing: -0.5,
   },
-  brandDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#C8B890',
-    marginBottom: 2,
+  decoLines: {
+    marginBottom: 16,
+    alignItems: 'center',
+    width: '100%',
+  },
+  decoLine: {
+    height: 1.5,
+    backgroundColor: '#1A1814',
+    borderRadius: 1,
+    opacity: 0.15,
   },
   panelHeadline: {
-    color: '#F4F1EC',
-    fontSize: 40,
+    color: '#1A1814',
+    fontSize: 44,
     fontWeight: '900',
     letterSpacing: -2,
-    lineHeight: 42,
-    marginBottom: 10,
+    lineHeight: 48,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   panelSub: {
-    color: '#7A7268',
-    fontSize: 14,
+    color: '#8C8478',
+    fontSize: 15,
     letterSpacing: 0.1,
+    textAlign: 'center',
   },
 
   // Form card
   formCard: {
-    flex: 1,
     backgroundColor: '#F4F1EC',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 28,
-    paddingTop: 32,
-    paddingBottom: 48,
-    marginTop: -4,
+    marginHorizontal: FORM_CARD_MARGIN,
+    borderRadius: 28,
+    padding: SWITCHER_PADDING,
+    shadowColor: '#1A1814',
+    shadowOpacity: 0.1,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
   },
 
   // Fields
   fieldGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   fieldLabel: {
     color: '#8C8478',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    marginBottom: 8,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginBottom: 10,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#EAE6DE',
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: 'transparent',
-    paddingHorizontal: 14,
-    height: 52,
+    paddingHorizontal: 16,
+    height: 56,
   },
   inputWrapFocused: {
-    borderColor: '#1A1814',
-    backgroundColor: '#F4F1EC',
+    borderColor: '#C8B890',
+    backgroundColor: '#FFFFFF',
   },
   inputIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   input: {
     flex: 1,
     color: '#1A1814',
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
   },
   eyeBtn: {
     padding: 4,
   },
 
   // Dropdown
-  dropdownTrigger: {
-    zIndex: 10,
-  },
   dropdownValue: {
     flex: 1,
     color: '#1A1814',
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
   },
   dropdownPlaceholder: {
     color: '#C0B8B0',
   },
   dropdownList: {
     overflow: 'hidden',
-    backgroundColor: '#EEEAE2',
-    borderRadius: 12,
-    marginTop: 6,
-    borderWidth: 1.5,
-    borderColor: '#E0DCD4',
+    backgroundColor: '#EAE6DE',
+    borderRadius: 16,
+    marginTop: 8,
   },
   dropdownItem: {
     flexDirection: 'row',
@@ -459,11 +477,11 @@ const s = StyleSheet.create({
   dropdownItemText: {
     color: '#6B6560',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   dropdownItemTextSelected: {
     color: '#1A1814',
-    fontWeight: '700',
+    fontWeight: '800',
   },
 
   // Password strength
@@ -494,29 +512,23 @@ const s = StyleSheet.create({
     width: 40,
   },
 
-  // Primary button
   primaryBtn: {
-    height: 54,
-    borderRadius: 999,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#1A1814',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'stretch',
-    gap: 10,
-    marginTop: 8,
-    marginBottom: 28,
-    elevation: 8,
-    shadowColor: '#1A1814',
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
+    marginTop: 10,
+    marginBottom: 24,
+    paddingHorizontal: 20,
+    gap: 12,
   },
   primaryBtnText: {
     color: '#F4F1EC',
     fontSize: 15,
     fontWeight: '800',
-    letterSpacing: 0.6,
+    letterSpacing: 1,
   },
   primaryBtnArrow: {
     width: 26,
@@ -526,20 +538,34 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    gap: 8,
+    padding: 10,
+  },
+  backBtnText: {
+    color: '#8C8478',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 
   // Switch auth
   switchAuthRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 12,
   },
   switchAuthText: {
     color: '#8C8478',
-    fontSize: 13,
+    fontSize: 14,
   },
   switchAuthLink: {
     color: '#1A1814',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
   },
-});
+});
