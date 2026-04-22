@@ -13,8 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import PhoneInput from 'react-native-phone-number-input';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import CountryPhonePicker from 'rn-country-phone-picker';
 import { supabase } from '../../lib/supabase';
 
 /**
@@ -31,8 +31,9 @@ export default function SignUpScreen() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('+84');
+  const [formattedPhone, setFormattedPhone] = useState('');
   const [password, setPassword] = useState('');
+  const phoneInputRef = useRef<PhoneInput | null>(null);
   
   // --- 2. UI States ---
   const [showPassword, setShowPassword] = useState(false);
@@ -55,8 +56,13 @@ export default function SignUpScreen() {
 
   // --- 4. Logic ---
   const handleSignUp = async () => {
-    if (!email || !password || !fullName || !username) {
+    if (!email || !password || !fullName || !username || !phone.trim()) {
       setError('Please fill in all fields');
+      return;
+    }
+
+    if (!phoneInputRef.current?.isValidNumber(phone)) {
+      setError('Please enter a valid phone number');
       return;
     }
 
@@ -64,7 +70,9 @@ export default function SignUpScreen() {
     setError(null);
 
     try {
-      const fullPhoneNumber = `${countryCode}${phone.replace(/^0+/, '')}`;
+      const fullPhoneNumber =
+        phoneInputRef.current?.getNumberAfterPossiblyEliminatingZero()?.formattedNumber ||
+        formattedPhone;
       
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -166,25 +174,34 @@ export default function SignUpScreen() {
               
               {renderField('EMAIL', 'mail-outline', email, setEmail, 'email@example.com', 'email', { keyboardType: 'email-address', autoCapitalize: 'none' })}
 
-              {/* Phone Field with Library Picker */}
+              {/* Phone Field with Country Picker */}
               <View style={styles.fieldGroup}>
                 <Text style={styles.fieldLabel}>PHONE NUMBER</Text>
-                <View style={[styles.inputWrap, focusedField === 'phone' && styles.inputWrapFocused, { paddingHorizontal: 0 }]}>
-                  <CountryPhonePicker
-                    countryCode={countryCode === '+84' ? 'VN' : 'US'}
-                    onSelectCountry={(c: any) => setCountryCode(`+${c.callingCode}`)}
-                    onChangePropText={(text: any) => {
-                      setPhone(text);
-                    }}
-                    onFocus={() => setFocusedField('phone')}
-                    onBlur={() => setFocusedField(null)}
-                    
-                    // Library Props
-                    phoneInputStyle={styles.pickerInput}
+                <View style={[styles.inputWrap, styles.phoneInputWrap, focusedField === 'phone' && styles.inputWrapFocused]}>
+                  <PhoneInput
+                    ref={phoneInputRef}
+                    defaultCode="VN"
+                    value={phone}
+                    layout="first"
+                    onChangeText={setPhone}
+                    onChangeFormattedText={setFormattedPhone}
                     containerStyle={styles.pickerContainer}
-                    placeholder="0123 456 789"
-                    placeholderTextColor="#C0B8B0"
-                    searchBarPlaceholder="Search country..."
+                    textContainerStyle={styles.pickerTextContainer}
+                    textInputStyle={styles.pickerInput}
+                    codeTextStyle={styles.pickerCodeText}
+                    flagButtonStyle={styles.pickerFlagButton}
+                    countryPickerButtonStyle={styles.pickerFlagButton}
+                    textInputProps={{
+                      placeholder: '0123 456 789',
+                      placeholderTextColor: '#C0B8B0',
+                      onFocus: () => setFocusedField('phone'),
+                      onBlur: () => setFocusedField(null),
+                    }}
+                    countryPickerProps={{
+                      withAlphaFilter: true,
+                      withCallingCode: true,
+                      withEmoji: true,
+                    }}
                   />
                 </View>
               </View>
@@ -335,6 +352,10 @@ const styles = StyleSheet.create({
     borderColor: '#C8B890',
     backgroundColor: '#FFFFFF',
   },
+  phoneInputWrap: {
+    paddingHorizontal: 0,
+    overflow: 'hidden',
+  },
   inputIcon: {
     marginRight: 12,
   },
@@ -349,21 +370,38 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     flex: 1,
+    width: '100%',
     height: 56,
     backgroundColor: 'transparent',
-    borderWidth: 0,
-    paddingHorizontal: 12,
-    alignItems: 'center',
+    borderRadius: 16,
+  },
+  pickerTextContainer: {
+    flex: 1,
+    height: '100%',
+    backgroundColor: 'transparent',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    paddingRight: 16,
+  },
+  pickerFlagButton: {
+    width: 92,
+    height: '100%',
     justifyContent: 'center',
-    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  pickerCodeText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1A1814',
+    marginRight: 8,
   },
   pickerInput: {
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
     color: '#1A1814',
-    marginLeft: 8,
-    height: '100%',
+    paddingVertical: 0,
   },
 
   errorContainer: {
