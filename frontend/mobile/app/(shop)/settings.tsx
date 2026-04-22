@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,14 +13,27 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../ctx/AuthContext';
 import { supabase } from '../../lib/supabase';
 
+
 export default function SettingsScreen() {
   const router = useRouter();
-  const { user, role } = useAuth();
+  const { user, role, points, rank, phone } = useAuth();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.replace('/(auth)/login');
   };
+
+  // Logic to calculate progress to next rank
+  const getNextRankInfo = () => {
+    if (points < 500) return { next: 'Silver', target: 500, current: points };
+    if (points < 1500) return { next: 'Gold', target: 1500, current: points };
+    if (points < 3000) return { next: 'Platinum', target: 3000, current: points };
+    if (points < 6000) return { next: 'Diamond', target: 6000, current: points };
+    return { next: 'Max', target: points, current: points };
+  };
+
+  const rankInfo = getNextRankInfo();
+  const progress = (rankInfo.current / rankInfo.target) * 100;
 
   return (
     <View style={styles.screen}>
@@ -28,32 +42,57 @@ export default function SettingsScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color="#111111" />
-          </Pressable>
-          <Text style={styles.headerTitle}>PROFILE</Text>
           <View style={{ width: 44 }} />
+          <Text style={styles.headerTitle}>PROFILE</Text>
+          <Pressable style={styles.backBtn}>
+            <Ionicons name="settings-outline" size={24} color="#111111" />
+          </Pressable>
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {/* Profile Card */}
           <View style={styles.profileCard}>
             <View style={styles.avatarLarge}>
-              <Text style={styles.avatarLargeText}>
-                {user?.email?.[0].toUpperCase() ?? 'U'}
-              </Text>
+              <Image
+                source={user?.user_metadata?.avatar_url ? { uri: user?.user_metadata?.avatar_url } : { uri: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}` }}
+                style={styles.avatarImg}
+              />
             </View>
-            <Text style={styles.userName}>{user?.user_metadata?.full_name || 'Guest User'}</Text>
-            <Text style={styles.userEmail}>{user?.email}</Text>
-            <View style={styles.roleBadge}>
-              <Text style={styles.roleText}>{role?.toUpperCase()}</Text>
+            <Text style={styles.userName}>{user?.user_metadata?.full_name || 'User'}</Text>
+            
+            {/* Membership Rank Badge */}
+            <View style={styles.rankBadge}>
+              <Ionicons name="ribbon-outline" size={14} color="#B8860B" />
+              <Text style={styles.rankText}>{rank.toUpperCase()} MEMBER</Text>
             </View>
           </View>
 
+          {/* Loyalty Section */}
+          <View style={styles.loyaltyCard}>
+            <View style={styles.loyaltyHeader}>
+              <Text style={styles.loyaltyTitle}>Atelier Points</Text>
+              <Text style={styles.pointsValue}>{points.toLocaleString()} pts</Text>
+            </View>
+            <View style={styles.progressBarBg}>
+              <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+            </View>
+            <Text style={styles.loyaltySub}>
+              {rankInfo.next === 'Max' 
+                ? 'You have reached the highest rank!' 
+                : `${(rankInfo.target - points).toLocaleString()} pts more to reach ${rankInfo.next}`}
+            </Text>
+          </View>
+
+
           {/* Settings Sections */}
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>ACCOUNT</Text>
-            <SettingsItem icon="person-outline" label="Personal Information" />
+            <SettingsItem 
+              icon="person-outline" 
+              label="Personal Information" 
+              onPress={() => router.push('/(shop)/profile_info')}
+            />
             <SettingsItem icon="location-outline" label="Shipping Addresses" />
             <SettingsItem icon="card-outline" label="Payment Methods" />
           </View>
@@ -74,29 +113,31 @@ export default function SettingsScreen() {
             <Ionicons name="log-out-outline" size={20} color="#FF4B4B" />
             <Text style={styles.signOutText}>Sign Out</Text>
           </Pressable>
+          
+          <View style={{ height: 100 }} />
         </ScrollView>
       </SafeAreaView>
     </View>
   );
 }
 
-function SettingsItem({ icon, label }: { icon: any, label: string }) {
+function SettingsItem({ icon, label, onPress }: { icon: any, label: string, onPress?: () => void }) {
   return (
-    <Pressable style={styles.settingsItem}>
+    <Pressable style={styles.settingsItem} onPress={onPress}>
       <View style={styles.settingsIconBox}>
         <Ionicons name={icon} size={20} color="#111111" />
       </View>
       <Text style={styles.settingsLabel}>{label}</Text>
-      <Ionicons name="chevron-forward" size={18} color="#EAE6DE" />
+      <Ionicons name="chevron-forward" size={18} color="#D1D1D1" />
     </Pressable>
   );
 }
+
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingBottom: 20,
   },
   safeArea: {
     flex: 1,
@@ -131,13 +172,17 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#D9EDF7',
+    backgroundColor: '#F6F6F4',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#0F172A12',
+    marginBottom: 16,
+    overflow: 'hidden',
   },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+  },
+
   avatarLargeText: {
     fontSize: 32,
     fontWeight: '800',
@@ -150,10 +195,60 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     marginBottom: 4,
   },
-  userEmail: {
-    fontSize: 14,
-    color: '#8C8478',
+  rankBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF9E5',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+    marginTop: 4,
+  },
+  rankText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#B8860B',
+    letterSpacing: 1,
+  },
+  loyaltyCard: {
+    backgroundColor: '#111111',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 32,
+  },
+  loyaltyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
+  },
+  loyaltyTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8C8478',
+  },
+  pointsValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  progressBarBg: {
+    height: 6,
+    backgroundColor: '#2A2A2A',
+    borderRadius: 3,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 3,
+  },
+  loyaltySub: {
+    fontSize: 12,
+    color: '#8C8478',
+    fontWeight: '500',
   },
   roleBadge: {
     backgroundColor: '#F6F6F4',
@@ -168,7 +263,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 22,
   },
   sectionTitle: {
     fontSize: 11,
@@ -203,7 +298,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
     marginTop: 20,
-    marginBottom: 40,
+    marginBottom: 10,
     padding: 16,
     borderRadius: 16,
     backgroundColor: '#FFF5F5',

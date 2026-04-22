@@ -65,7 +65,8 @@ function FeatureRow({ title, description, icon, index }: Feature) {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fadeAnim, index, slideAnim]);
+
 
   const isLast = index === features.length - 1;
 
@@ -116,7 +117,7 @@ function HeroScene() {
         }),
       ])
     ).start();
-  }, []);
+  }, [pulseAnim]);
 
   return (
     <View style={styles.heroContainer}>
@@ -215,7 +216,7 @@ export default function WelcomeScreen() {
       Animated.timing(headFade, { toValue: 1, duration: 600, delay: 200, useNativeDriver: true }),
       Animated.timing(headSlide, { toValue: 0, duration: 600, delay: 200, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [heroFade, heroSlide, headFade, headSlide]);
 
   return (
     <View style={styles.screen}>

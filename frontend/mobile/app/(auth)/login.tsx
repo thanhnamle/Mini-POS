@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../ctx/AuthContext';
+// import { useAuth } from '../../ctx/AuthContext';
 
 const FORM_CARD_MARGIN = 20;
 const SWITCHER_PADDING = 24;
@@ -26,15 +26,16 @@ export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [role, setRole] = useState<Role>('customer');
-  const [email, setEmail] = useState('');
+  // const [role, setRole] = useState<Role>('customer');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [emailFocused, setEmailFocused] = useState(false);
+  const [identifierFocused, setIdentifierFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { refreshProfile } = useAuth();
+
+  // const { refreshProfile } = useAuth();
 
   const contentFade = useRef(new Animated.Value(0)).current;
   const contentSlide = useRef(new Animated.Value(30)).current;
@@ -47,8 +48,8 @@ export default function LoginScreen() {
   }, [contentFade, contentSlide]);
 
   const handleSignIn = async () => {
-    if (!email || !password) {
-      setError('Please enter both email and password');
+    if (!identifier || !password) {
+      setError('Please enter both Email/Username and password');
       return;
     }
 
@@ -56,10 +57,33 @@ export default function LoginScreen() {
     setError(null);
 
     try {
+      let finalEmail = identifier.trim();
+
+      // 1. Resolve email from username if necessary
+      const isEmail = finalEmail.includes('@');
+      
+      if (!isEmail) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', finalEmail.toLowerCase())
+          .single();
+
+        if (profileError || !profile?.email) {
+          setError('Username not found or has no email associated');
+          setLoading(false);
+          return;
+        }
+        finalEmail = profile.email;
+      }
+
+      // 2. Sign in
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+        email: finalEmail,
         password,
       });
+
+
 
       if (signInError) {
         setError(signInError.message);
@@ -134,32 +158,33 @@ export default function LoginScreen() {
               <Text style={s.panelSub}>Sign in to your workspace</Text>
             </View>
 
-            {/* ── FORM CARD - New Design ── */}
+            {/* ── FORM CARD ── */}
             <View style={s.formCard}>
 
-              {/* Email field */}
+              {/* Email/Username field */}
               <View style={s.fieldGroup}>
                 <Text style={s.fieldLabel}>EMAIL OR USERNAME</Text>
-                <View style={[s.inputWrap, emailFocused && s.inputWrapFocused]}>
+                <View style={[s.inputWrap, identifierFocused && s.inputWrapFocused]}>
                   <Ionicons
                     name="person-outline"
                     size={18}
-                    color={emailFocused ? '#1A1814' : '#A09890'}
+                    color={identifierFocused ? '#1A1814' : '#A09890'}
                     style={s.inputIcon}
                   />
                   <TextInput
                     style={s.input}
-                    placeholder="jane@atelierpos.com"
+                    placeholder="Email or @username"
                     placeholderTextColor="#C0B8B0"
-                    value={email}
-                    onChangeText={setEmail}
-                    onFocus={() => setEmailFocused(true)}
-                    onBlur={() => setEmailFocused(false)}
+                    value={identifier}
+                    onChangeText={setIdentifier}
+                    onFocus={() => setIdentifierFocused(true)}
+                    onBlur={() => setIdentifierFocused(false)}
                     autoCapitalize="none"
-                    keyboardType="email-address"
+                    keyboardType="default"
                   />
                 </View>
               </View>
+
 
               {/* Password field */}
               <View style={s.fieldGroup}>

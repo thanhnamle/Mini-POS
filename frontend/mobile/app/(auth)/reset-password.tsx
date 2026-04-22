@@ -39,7 +39,7 @@ export default function ResetPasswordScreen() {
       Animated.timing(contentFade, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.timing(contentSlide, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [contentFade, contentSlide]);
 
   const handleUpdatePassword = () => {
     // Logic to update password
