@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { AuthProvider } from '../ctx/AuthContext';
+import { CartProvider } from '../ctx/CartContext';
 
 const appTheme = {
   ...DefaultTheme,
@@ -20,44 +21,16 @@ const appTheme = {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <ThemeProvider value={appTheme}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            animation: 'fade',
-            contentStyle: { backgroundColor: '#F6F4F1' },
-          }}
-        >
-          <Stack.Screen name="index" />
-          <Stack.Screen
-            name="(auth)"
-            options={{
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="(shop)"
-            options={{
-              animation: 'fade_from_bottom',
-            }}
-          />
-          <Stack.Screen
-            name="(admin)"
-            options={{
-              animation: 'fade_from_bottom',
-            }}
-          />
-          <Stack.Screen
-            name="modal"
-            options={{
-              presentation: 'transparentModal',
-              contentStyle: { backgroundColor: 'transparent' },
-            }}
-          />
-        </Stack>
-        <StatusBar style="dark" />
-      </ThemeProvider>
+      <CartProvider>
+        <ThemeProvider value={appTheme}>
+          <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="(shop)" options={{ animation: 'fade' }} />
+          </Stack>
+          <StatusBar style="dark" />
+        </ThemeProvider>
+      </CartProvider>
     </AuthProvider>
   );
 }
-

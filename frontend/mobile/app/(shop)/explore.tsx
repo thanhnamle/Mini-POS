@@ -1,13 +1,15 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useCart } from '../../ctx/CartContext';
+import CartPreview from '../../components/CartPreview';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,18 +18,20 @@ import { products, Product, Category } from '../../constants/products';
 
 const categories: Category[] = ['All', 'Apparel', 'Accessories', 'Objects'];
 
-
-
 export default function ShopHomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { itemCount } = useCart();
   const [selectedCategory, setSelectedCategory] = useState<Category>('All');
   const [isCartVisible, setIsCartVisible] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const visibleProducts =
-    selectedCategory === 'All'
-      ? products
-      : products.filter((product) => product.category === selectedCategory);
+  const visibleProducts = products.filter((product) => {
+    const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <View style={styles.screen}>
@@ -42,26 +46,47 @@ export default function ShopHomeScreen() {
           ]}
         >
           <View style={styles.headerRow}>
-            <Pressable style={styles.iconButton}>
-              <Ionicons name="search-outline" size={24} color="#111111" />
-            </Pressable>
-
-            <Text style={styles.brand}>ATELIER.</Text>
-
-            <View style={styles.headerActions}>
-              <View style={styles.cartWrap}>
-                <Pressable style={styles.iconButton} onPress={() => setIsCartVisible(true)}>
-                  <Ionicons name="bag-outline" size={28} color="#111111" />
+            {isSearchActive ? (
+              <View style={styles.searchBarContainer}>
+                <Ionicons name="search-outline" size={20} color="#737373" style={styles.searchIcon} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search products..."
+                  placeholderTextColor="#A3A3A3"
+                  autoFocus
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                <Pressable onPress={() => { setIsSearchActive(false); setSearchQuery(''); }}>
+                  <Ionicons name="close-circle" size={20} color="#737373" />
                 </Pressable>
-                <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>2</Text>
-                </View>
               </View>
+            ) : (
+              <>
+                <Pressable style={styles.iconButton} onPress={() => setIsSearchActive(true)}>
+                  <Ionicons name="search-outline" size={24} color="#111111" />
+                </Pressable>
 
-              <Pressable style={styles.avatar} onPress={() => router.push('/(shop)/settings')}>
-                <Text style={styles.avatarText}>CA</Text>
-              </Pressable>
-            </View>
+                <Text style={styles.brand}>ATELIER.</Text>
+
+                <View style={styles.headerActions}>
+                  <View style={styles.cartWrap}>
+                    <Pressable style={styles.iconButton} onPress={() => setIsCartVisible(true)}>
+                      <Ionicons name="bag-outline" size={28} color="#111111" />
+                    </Pressable>
+                    {itemCount > 0 && (
+                      <View style={styles.cartBadge}>
+                        <Text style={styles.cartBadgeText}>{itemCount}</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <Pressable style={styles.avatar} onPress={() => router.push('/(shop)/settings')}>
+                    <Text style={styles.avatarText}>CA</Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
           </View>
 
           <View style={styles.heroBlock}>
@@ -106,94 +131,11 @@ export default function ShopHomeScreen() {
         </ScrollView>
       </SafeAreaView>
 
-      ── Cart Preview Popup ──
-      <Modal
-        visible={isCartVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsCartVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          {/* Overlay background */}
-          <Pressable 
-            style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.7)' }]} 
-            onPress={() => setIsCartVisible(false)}
-          />
-
-          
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <View>
-                <Text style={styles.modalTitle}>Cart Preview</Text>
-                <Text style={styles.modalSub}>REVIEW ITEMS BEFORE CHECKOUT</Text>
-              </View>
-              <Pressable style={styles.closeBtn} onPress={() => setIsCartVisible(false)}>
-                <Ionicons name="close" size={20} color="#111111" />
-              </Pressable>
-            </View>
-
-            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-              {/* Mock Cart Items */}
-              <View style={styles.previewItem}>
-                <View style={[styles.previewItemThumb, { backgroundColor: '#EAE6DE' }]}>
-                  <Ionicons name="shirt-outline" size={32} color="#111111" />
-                </View>
-                <View style={styles.previewItemInfo}>
-                  <Text style={styles.previewItemName}>Architectural Coat</Text>
-                  <Text style={styles.previewItemPrice}>$450.00</Text>
-                  <View style={styles.previewItemMeta}>
-                    <Text style={styles.previewItemQty}>QTY 1</Text>
-                    <Text style={styles.previewItemVariant}>SIZE XL / BLACK</Text>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.giftWrapBox}>
-                <Ionicons name="gift-outline" size={16} color="#8C8478" />
-                <Text style={styles.giftWrapText}>Gift wrap with handwritten note for delivery.</Text>
-              </View>
-
-              <View style={styles.previewItem}>
-                <View style={[styles.previewItemThumb, { backgroundColor: '#F3F3F1' }]}>
-                  <Ionicons name="shirt-outline" size={32} color="#111111" />
-                </View>
-                <View style={styles.previewItemInfo}>
-                  <Text style={styles.previewItemName}>Heavyweight Tee</Text>
-                  <Text style={styles.previewItemPrice}>$130.00</Text>
-                  <View style={styles.previewItemMeta}>
-                    <Text style={styles.previewItemQty}>QTY 2</Text>
-                    <Text style={styles.previewItemVariant}>SIZE M / OBSIDIAN</Text>
-                  </View>
-                </View>
-              </View>
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <View style={styles.totalRow}>
-                <View>
-                  <Text style={styles.totalLabel}>TOTAL AMOUNT</Text>
-                  <Text style={styles.totalValue}>$580.00</Text>
-                </View>
-                <Text style={styles.taxNote}>Tax included{'\n'}3 items total</Text>
-              </View>
-
-              <Pressable 
-                style={styles.proceedBtn}
-                onPress={() => {
-                  setIsCartVisible(false);
-                  router.push('/(shop)/checkout');
-                }}
-              >
-                <Text style={styles.proceedBtnText}>PROCEED TO ORDER</Text>
-                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <CartPreview visible={isCartVisible} onClose={() => setIsCartVisible(false)} />
     </View>
   );
 }
+
 
 
 function ProductArtwork({ product }: { product: Product }) {
@@ -277,8 +219,34 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 16,
   },
+  searchBarContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F3F1',
+    height: 48,
+    borderRadius: 24,
+    paddingHorizontal: 16,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#111111',
+    fontWeight: '600',
+    paddingVertical: 8,
+  },
+  // iconButton: {
+  //   position: 'relative',
+  //   width: 36,
+  //   height: 36,
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  // },
   cartWrap: {
     position: 'relative',
   },

@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
 import {
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,9 +12,30 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useCart } from '../../ctx/CartContext';
+
 export default function CheckoutScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { cart, clearCart } = useCart();
+  const [successVisible, setSuccessVisible] = useState(false);
+
+  const handleProcessTransaction = () => {
+    // Show success popup instead of alert
+    setSuccessVisible(true);
+  };
+
+  const handleNewOrder = () => {
+    setSuccessVisible(false);
+    clearCart();
+    router.replace('/(shop)/explore');
+  };
+
+
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const tax = subtotal * 0.07;
+  const serviceFee = 0.55;
+  const grandTotal = subtotal + tax + serviceFee;
 
   return (
     <View style={styles.screen}>
@@ -28,9 +51,6 @@ export default function CheckoutScreen() {
             <Text style={styles.brandText}>ATELIER.</Text>
             <Text style={styles.modeText}>CHECKOUT MODE</Text>
           </View>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>UN</Text>
-          </View>
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -39,24 +59,22 @@ export default function CheckoutScreen() {
 
           {/* Order Items */}
           <View style={styles.itemsList}>
-            <OrderItem 
-              name="Atelier Series 01" 
-              sku="8820-MNML" 
-              price={240} 
-              qty={1} 
-            />
-            <OrderItem 
-              name="Studio Headset Pro" 
-              sku="4410-AUDI" 
-              price={350} 
-              qty={1} 
-            />
-            <OrderItem 
-              name="Vessel Matte Obsidian" 
-              sku="1092-VESL" 
-              price={45} 
-              qty={2} 
-            />
+            {cart.length === 0 ? (
+              <Text style={styles.emptyText}>No items in cart</Text>
+            ) : (
+              cart.map((item, idx) => (
+                <OrderItem 
+                  key={`${item.id}-${idx}`}
+                  name={item.name} 
+                  sku={item.id.slice(0, 8).toUpperCase()} 
+                  price={item.price} 
+                  qty={item.quantity}
+                  surface={item.surface}
+                  icon={item.icon}
+                  iconColor={item.iconColor}
+                />
+              ))
+            )}
           </View>
 
           {/* Total Card */}
@@ -64,7 +82,7 @@ export default function CheckoutScreen() {
             <View style={styles.totalHeader}>
               <View>
                 <Text style={styles.grandTotalLabel}>GRAND TOTAL</Text>
-                <Text style={styles.grandTotalValue}>$680.00</Text>
+                <Text style={styles.grandTotalValue}>${grandTotal.toFixed(2)}</Text>
               </View>
               <Ionicons name="card" size={32} color="#FFFFFF20" />
             </View>
@@ -72,15 +90,15 @@ export default function CheckoutScreen() {
             <View style={styles.breakdown}>
               <View style={styles.breakdownRow}>
                 <Text style={styles.breakdownLabel}>Subtotal</Text>
-                <Text style={styles.breakdownValue}>$635.00</Text>
+                <Text style={styles.breakdownValue}>${subtotal.toFixed(2)}</Text>
               </View>
               <View style={styles.breakdownRow}>
                 <Text style={styles.breakdownLabel}>Tax (7%)</Text>
-                <Text style={styles.breakdownValue}>$44.45</Text>
+                <Text style={styles.breakdownValue}>${tax.toFixed(2)}</Text>
               </View>
               <View style={styles.breakdownRow}>
                 <Text style={styles.breakdownLabel}>Service Fee</Text>
-                <Text style={styles.breakdownValue}>$0.55</Text>
+                <Text style={styles.breakdownValue}>${serviceFee.toFixed(2)}</Text>
               </View>
             </View>
           </View>
@@ -108,21 +126,56 @@ export default function CheckoutScreen() {
           </View>
         </ScrollView>
 
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-          <Pressable style={styles.mainBtn}>
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) + 70 }]}>
+          <Pressable 
+            style={[styles.mainBtn, cart.length === 0 && styles.disabledBtn]} 
+            onPress={handleProcessTransaction}
+            disabled={cart.length === 0}
+          >
             <Text style={styles.mainBtnText}>PROCESS TRANSACTION</Text>
             <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
           </Pressable>
         </View>
       </SafeAreaView>
+
+      {/* ── Success Modal ── */}
+      <Modal
+        visible={successVisible}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.successOverlay}>
+          <View style={styles.successContainer}>
+            <View style={styles.successIconOuter}>
+              <View style={styles.successIconInner}>
+                <Ionicons name="checkmark" size={40} color="#FFFFFF" />
+              </View>
+            </View>
+
+            <Text style={styles.successTitle}>Payment Successful</Text>
+            <Text style={styles.successSub}>Thank you for your purchase!{'\n'}Your receipt has been generated.</Text>
+
+            <Pressable style={styles.newOrderBtn} onPress={handleNewOrder}>
+              <Text style={styles.newOrderBtnText}>New Order</Text>
+            </Pressable>
+
+            <Pressable style={styles.printBtn}>
+              <Text style={styles.printBtnText}>Print Receipt</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
-function OrderItem({ name, sku, price, qty }: { name: string, sku: string, price: number, qty: number }) {
+
+function OrderItem({ name, sku, price, qty, surface, icon, iconColor }: any) {
   return (
     <View style={styles.itemRow}>
-      <View style={styles.itemThumb} />
+      <View style={[styles.itemThumb, { backgroundColor: surface, alignItems: 'center', justifyContent: 'center' }]}>
+        <Ionicons name={icon} size={24} color={iconColor} />
+      </View>
       <View style={styles.itemInfo}>
         <Text style={styles.itemName}>{name}</Text>
         <Text style={styles.itemSku}>SKU: {sku}</Text>
@@ -134,6 +187,7 @@ function OrderItem({ name, sku, price, qty }: { name: string, sku: string, price
     </View>
   );
 }
+
 
 function PaymentOption({ icon, title, sub, selected }: { icon: any, title: string, sub: string, selected?: boolean }) {
   return (
@@ -373,10 +427,96 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
   },
+  disabledBtn: {
+    backgroundColor: '#D1D5DB',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#8C8478',
+    textAlign: 'center',
+    paddingVertical: 20,
+    fontStyle: 'italic',
+  },
   mainBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: 1,
   },
+  successOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+  },
+  successContainer: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 32,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  successIconOuter: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#F6F6F4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  successIconInner: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#111111',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#111111',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  successSub: {
+    fontSize: 14,
+    color: '#8C8478',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 32,
+  },
+  newOrderBtn: {
+    width: '100%',
+    height: 56,
+    backgroundColor: '#111111',
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  newOrderBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  printBtn: {
+    padding: 12,
+  },
+  printBtnText: {
+    color: '#111111',
+    fontSize: 15,
+    fontWeight: '700',
+  },
 });
+

@@ -11,11 +11,13 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { products } from '../../../constants/products';
+import { useCart } from '../../../ctx/CartContext';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { addToCart } = useCart();
   
   const product = products.find((p) => p.id === id);
   const [selectedSize, setSelectedSize] = useState('M');
@@ -32,6 +34,11 @@ export default function ProductDetailScreen() {
   }
 
   const sizes = ['S', 'M', 'L', 'XL'];
+
+  const handleAddToBag = () => {
+    addToCart(product, selectedSize);
+    router.back();
+  };
 
   return (
     <View style={styles.screen}>
@@ -97,8 +104,8 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       {/* Sticky Bottom Action */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-        <Pressable style={styles.primaryBtn}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) + 70 }]}>
+        <Pressable style={styles.primaryBtn} onPress={handleAddToBag}>
           <Text style={styles.primaryBtnText}>ADD TO BAG</Text>
           <View style={styles.btnIcon}>
             <Ionicons name="bag-add-outline" size={18} color="#1A1814" />
@@ -113,6 +120,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    paddingBottom: 20,
   },
   errorScreen: {
     flex: 1,

@@ -76,8 +76,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         else if (route.name === 'checkout') iconName = isFocused ? 'bag-handle' : 'bag-handle-outline';
         else if (route.name === 'settings') iconName = isFocused ? 'person' : 'person-outline';
 
-        // Skip rendering hidden routes or nested ones if any
-        if (route.name.includes('[id]')) return null;
+        // ONLY RENDER THESE 3 TABS
+        const allowedTabs = ['explore', 'checkout', 'settings'];
+        if (!allowedTabs.includes(route.name)) return null;
 
         return (
           <Pressable
@@ -99,6 +100,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   bottomBar: {
