@@ -3,6 +3,8 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { AuthProvider } from '../ctx/AuthContext';
+
 const appTheme = {
   ...DefaultTheme,
   colors: {
@@ -17,42 +19,45 @@ const appTheme = {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider value={appTheme}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: 'fade',
-          contentStyle: { backgroundColor: '#F6F4F1' },
-        }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen
-          name="(auth)"
-          options={{
-            animation: 'slide_from_right',
+    <AuthProvider>
+      <ThemeProvider value={appTheme}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: 'fade',
+            contentStyle: { backgroundColor: '#F6F4F1' },
           }}
-        />
-        <Stack.Screen
-          name="(cashier)"
-          options={{
-            animation: 'fade_from_bottom',
-          }}
-        />
-        <Stack.Screen
-          name="(admin)"
-          options={{
-            animation: 'fade_from_bottom',
-          }}
-        />
-        <Stack.Screen
-          name="modal"
-          options={{
-            presentation: 'transparentModal',
-            contentStyle: { backgroundColor: 'transparent' },
-          }}
-        />
-      </Stack>
-      <StatusBar style="dark" />
-    </ThemeProvider>
+        >
+          <Stack.Screen name="index" />
+          <Stack.Screen
+            name="(auth)"
+            options={{
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="(shop)"
+            options={{
+              animation: 'fade_from_bottom',
+            }}
+          />
+          <Stack.Screen
+            name="(admin)"
+            options={{
+              animation: 'fade_from_bottom',
+            }}
+          />
+          <Stack.Screen
+            name="modal"
+            options={{
+              presentation: 'transparentModal',
+              contentStyle: { backgroundColor: 'transparent' },
+            }}
+          />
+        </Stack>
+        <StatusBar style="dark" />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
+

@@ -15,27 +15,28 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../ctx/AuthContext';
 
-const { width } = Dimensions.get('window');
 const FORM_CARD_MARGIN = 20;
 const SWITCHER_PADDING = 24;
-const SWITCHER_WIDTH = width - (FORM_CARD_MARGIN * 2) - (SWITCHER_PADDING * 2);
-const PILL_WIDTH = (SWITCHER_WIDTH - 4) / 2;
 
-type Role = 'cashier' | 'admin';
+type Role = 'customer' | 'admin';
 
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [role, setRole] = useState<Role>('cashier');
+  const [role, setRole] = useState<Role>('customer');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { refreshProfile } = useAuth();
 
-  const pillAnim = useRef(new Animated.Value(0)).current;
   const contentFade = useRef(new Animated.Value(0)).current;
   const contentSlide = useRef(new Animated.Value(30)).current;
 
@@ -46,23 +47,53 @@ export default function LoginScreen() {
     ]).start();
   }, [contentFade, contentSlide]);
 
-  const switchRole = (r: Role) => {
-    setRole(r);
-    Animated.spring(pillAnim, {
-      toValue: r === 'cashier' ? 0 : 1,
-      useNativeDriver: true,
-      damping: 20,
-      stiffness: 150,
-    }).start();
-  };
-
-  const handleSignIn = () => {
-    if (role === 'cashier') {
-      router.replace('/(cashier)');
+  const handleSignIn = async () => {
+    if (!email || !password) {
+      setError('Please enter both email and password');
       return;
     }
 
-    router.replace('/(admin)');
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        // Fetch profile to get role
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.warn('Profile fetch failed, using default (shop)');
+          router.replace('/(shop)/explore');
+        } else if (profile) {
+          const userRole = profile.role as Role;
+          if (userRole === 'admin') {
+            router.replace('/(admin)');
+          } else {
+            router.replace('/(shop)/explore');
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Unexpected error during sign in:', err);
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -106,35 +137,6 @@ export default function LoginScreen() {
 
             {/* ── FORM CARD - New Design ── */}
             <View style={s.formCard}>
-              {/* Role switcher */}
-              <View style={s.roleSwitcher}>
-                <Animated.View
-                  style={[
-                    s.rolePill,
-                    {
-                      width: PILL_WIDTH,
-                      transform: [
-                        {
-                          translateX: pillAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [2, PILL_WIDTH + 2],
-                          }),
-                        },
-                      ],
-                    },
-                  ]}
-                />
-                <Pressable style={s.roleBtn} onPress={() => switchRole('cashier')}>
-                  <Text style={[s.roleBtnText, role === 'cashier' && s.roleBtnTextActive]}>
-                    Cashier
-                  </Text>
-                </Pressable>
-                <Pressable style={s.roleBtn} onPress={() => switchRole('admin')}>
-                  <Text style={[s.roleBtnText, role === 'admin' && s.roleBtnTextActive]}>
-                    Admin
-                  </Text>
-                </Pressable>
-              </View>
 
               {/* Email field */}
               <View style={s.fieldGroup}>
@@ -195,15 +197,23 @@ export default function LoginScreen() {
                 </View>
               </View>
 
+              {error && (
+                <View style={s.errorBox}>
+                  <Ionicons name="alert-circle-outline" size={16} color="#D24B4B" />
+                  <Text style={s.errorText}>{error}</Text>
+                </View>
+              )}
+
               {/* Sign in button */}
               <Pressable
-                style={s.primaryBtn}
+                style={[s.primaryBtn, loading && s.primaryBtnDisabled]}
                 android_ripple={{ color: 'rgba(223, 90, 90, 0.12)', borderless: false }}
                 onPress={handleSignIn}
+                disabled={loading}
               >
-                <Text style={s.primaryBtnText}>SIGN IN</Text>
+                <Text style={s.primaryBtnText}>{loading ? 'SIGNING IN...' : 'SIGN IN'}</Text>
                 <View style={s.primaryBtnArrow}>
-                  <Ionicons name="key" size={14} color="#1A1814" />
+                  <Ionicons name={loading ? 'sync' : 'key'} size={14} color="#1A1814" />
                 </View>
               </Pressable>
 
@@ -230,11 +240,11 @@ export default function LoginScreen() {
 const s = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#EDE9E2', // Nền màn hình kem xám nhạt
+    backgroundColor: '#EDE9E2',
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center', // Căn giữa nội dung theo chiều dọc
+    justifyContent: 'center',
     paddingBottom: 40,
   },
   animatedContent: {
@@ -265,7 +275,7 @@ const s = StyleSheet.create({
 
   // Top panel (Centered Header)
   topPanel: {
-    alignItems: 'center', // Căn giữa nội dung
+    alignItems: 'center',
     marginBottom: 40,
     paddingHorizontal: 28,
   },
@@ -299,7 +309,7 @@ const s = StyleSheet.create({
     letterSpacing: -2.5,
     lineHeight: 52,
     marginBottom: 12,
-    textAlign: 'center', // Căn giữa văn bản
+    textAlign: 'center',
   },
   panelSub: {
     color: '#8C8478',
@@ -319,38 +329,6 @@ const s = StyleSheet.create({
     shadowRadius: 30,
     shadowOffset: { width: 0, height: 10 },
     elevation: 10,
-  },
-
-  // Role switcher
-  roleSwitcher: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EAE6DE', // Nền switcher tối hơn Card
-    borderRadius: 14,
-    padding: 2,
-    marginBottom: 32,
-    height: 48,
-    width: '100%',
-  },
-  rolePill: {
-    position: 'absolute',
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#1A1814', // Pill màu tối
-  },
-  roleBtn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1,
-  },
-  roleBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#8C8478',
-  },
-  roleBtnTextActive: {
-    color: '#F4F1EC', // Màu chữ kem khi active
   },
 
   // Fields
@@ -386,8 +364,8 @@ const s = StyleSheet.create({
     height: 56,
   },
   inputWrapFocused: {
-    borderColor: '#C8B890', // Màu beige khi focus
-    backgroundColor: '#FFFFFF', // Nền trắng khi focus
+    borderColor: '#C8B890',
+    backgroundColor: '#FFFFFF',
   },
   inputIcon: {
     marginRight: 12,
@@ -462,5 +440,22 @@ const s = StyleSheet.create({
     color: '#1A1814',
     fontSize: 14,
     fontWeight: '800',
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FDECEA',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 20,
+    gap: 8,
+  },
+  errorText: {
+    color: '#D24B4B',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  primaryBtnDisabled: {
+    opacity: 0.6,
   },
 });

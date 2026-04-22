@@ -4,7 +4,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,8 +14,8 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { supabase } from '../../lib/supabase';
 
-const { width } = Dimensions.get('window');
 const FORM_CARD_MARGIN = 20;
 const SWITCHER_PADDING = 24;
 
@@ -28,6 +27,8 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [nameFocused, setNameFocused] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
@@ -43,6 +44,63 @@ export default function SignUpScreen() {
       Animated.timing(contentSlide, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start();
   }, []);
+
+  const handleSignUp = async () => {
+    if (!email || !password || !fullName) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            role: 'customer',
+          },
+        },
+      });
+
+      if (signUpError) {
+        setError(signUpError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        // Create profile
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: data.user.id,
+          full_name: fullName,
+          role: 'customer', // Default role
+        });
+
+        if (profileError) {
+          console.warn('Profile table insert failed (likely RLS), using metadata instead:', profileError.message);
+          // Still redirect because we have metadata
+          router.replace('/(shop)/explore');
+        } else {
+          router.replace('/(shop)/explore');
+        }
+
+      }
+    } catch (err) {
+      console.error('Unexpected error during sign up:', err);
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={s.screen}>
@@ -189,15 +247,23 @@ export default function SignUpScreen() {
                 )}
               </View>
 
+              {error && (
+                <View style={s.errorBox}>
+                  <Ionicons name="alert-circle-outline" size={16} color="#D24B4B" />
+                  <Text style={s.errorText}>{error}</Text>
+                </View>
+              )}
+
               {/* Create account button */}
               <Pressable
-                style={s.primaryBtn}
+                style={[s.primaryBtn, loading && s.primaryBtnDisabled]}
                 android_ripple={{ color: 'rgba(223, 90, 90, 0.12)', borderless: false }}
-                onPress={() => router.push('/(cashier)/index')}
+                onPress={handleSignUp}
+                disabled={loading}
               >
-                <Text style={s.primaryBtnText}>CREATE ACCOUNT</Text>
+                <Text style={s.primaryBtnText}>{loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}</Text>
                 <View style={s.primaryBtnArrow}>
-                  <Ionicons name="person-add" size={14} color="#1A1814" />
+                  <Ionicons name={loading ? 'sync' : 'person-add'} size={14} color="#1A1814" />
                 </View>
               </Pressable>
 
@@ -476,5 +542,22 @@ const s = StyleSheet.create({
     color: '#1A1814',
     fontSize: 14,
     fontWeight: '800',
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FDECEA',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 20,
+    gap: 8,
+  },
+  errorText: {
+    color: '#D24B4B',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  primaryBtnDisabled: {
+    opacity: 0.6,
   },
 });

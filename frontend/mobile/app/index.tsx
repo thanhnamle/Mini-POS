@@ -25,21 +25,21 @@ type Feature = {
 
 const features: Feature[] = [
   {
-    title: 'Smart Inventory',
-    description: 'Precise, automated tracking and control over every SKU in your collection.',
-    icon: 'archive-outline',
+    title: 'Curated Collections',
+    description: 'Explore our hand-picked selection of premium apparel and accessories.',
+    icon: 'shirt-outline',
     index: 0,
   },
   {
-    title: 'Seamless Checkout',
-    description: 'Frictionless, elegant transactions designed to elevate the final customer touchpoint.',
-    icon: 'card-outline',
+    title: 'Seamless Shopping',
+    description: 'Experience a frictionless checkout designed for the modern connoisseur.',
+    icon: 'bag-handle-outline',
     index: 1,
   },
   {
-    title: 'Real-time Analytics',
-    description: 'Instant, data-driven insights crafted to inform your strategic curation.',
-    icon: 'stats-chart-outline',
+    title: 'Personalized Style',
+    description: 'Get tailored recommendations that match your unique aesthetic.',
+    icon: 'sparkles-outline',
     index: 2,
   },
 ];
@@ -162,7 +162,7 @@ function HeroScene() {
 
       {/* Corner accent label */}
       <View style={styles.heroBadge}>
-        <Text style={styles.heroBadgeText}>POS v2</Text>
+        <Text style={styles.heroBadgeText}>EST. 2024</Text>
       </View>
     </View>
   );
@@ -236,7 +236,7 @@ export default function WelcomeScreen() {
             <Text style={styles.brand}>ATELIER.</Text>
             <View style={styles.topBarPill}>
               <View style={styles.topBarDot} />
-              <Text style={styles.topBarPillText}>POS</Text>
+              <Text style={styles.topBarPillText}>BOUTIQUE</Text>
             </View>
           </View>
 
@@ -263,10 +263,10 @@ export default function WelcomeScreen() {
               <Text style={styles.eyebrowText}>CURATED COMMERCE</Text>
             </View>
 
-            <Text style={styles.headline}>The modern{'\n'}retail OS</Text>
+            <Text style={styles.headline}>The modern{'\n'}fashion house</Text>
 
             <Text style={styles.subheadline}>
-              Built for boutiques, galleries, and studios that refuse to compromise on experience.
+              A digital sanctuary for boutiques, galleries, and studios that value timeless design.
             </Text>
           </Animated.View>
 
