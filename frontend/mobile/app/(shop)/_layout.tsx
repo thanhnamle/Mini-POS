@@ -27,15 +27,22 @@ export default function ShopLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'EXPLORE',
+          title: 'SHOP',
           tabBarIcon: ({ color }) => <Ionicons name="compass-outline" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="checkout"
+        name="wishlist"
         options={{
-          title: 'CHECKOUT',
-          tabBarIcon: ({ color }) => <Ionicons name="bag-handle-outline" size={22} color={color} />,
+          title: 'WISHLIST',
+          tabBarIcon: ({ color }) => <Ionicons name="heart-outline" size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="order_history"
+        options={{
+          title: 'ORDERS',
+          tabBarIcon: ({ color }) => <Ionicons name="receipt-outline" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -73,12 +80,14 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
         let iconName: any = 'compass-outline';
         if (route.name === 'explore') iconName = isFocused ? 'compass' : 'compass-outline';
-        else if (route.name === 'checkout') iconName = isFocused ? 'bag-handle' : 'bag-handle-outline';
+        else if (route.name === 'wishlist') iconName = isFocused ? 'heart' : 'heart-outline';
+        else if (route.name === 'order_history') iconName = isFocused ? 'receipt' : 'receipt-outline';
         else if (route.name === 'settings') iconName = isFocused ? 'person' : 'person-outline';
 
-        // ONLY RENDER THESE 3 TABS
-        const allowedTabs = ['explore', 'checkout', 'settings'];
+        // ONLY RENDER THESE 4 TABS
+        const allowedTabs = ['explore', 'wishlist', 'order_history', 'settings'];
         if (!allowedTabs.includes(route.name)) return null;
+
 
         return (
           <Pressable

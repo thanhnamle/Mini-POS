@@ -169,11 +169,16 @@ export default function SettingsScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>ORDERS</Text>
             <SettingsItem 
+              icon="heart-outline" 
+              label="Saved Items" 
+              onPress={() => router.push('/(shop)/wishlist')}
+            />
+            <SettingsItem 
               icon="receipt-outline" 
               label="Order History" 
               onPress={() => router.push('/(shop)/order_history')}
             />
-            <SettingsItem icon="heart-outline" label="Wishlist" />
+
           </View>
 
 

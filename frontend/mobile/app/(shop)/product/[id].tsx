@@ -46,6 +46,41 @@ export default function ProductDetailScreen() {
   const [quantity, setQuantity] = useState(1);
   const [showCartSuccess, setShowCartSuccess] = useState(false);
   const [userRating, setUserRating] = useState(5);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+
+  const checkWishlist = useCallback(async () => {
+    if (!user || !id) return;
+    const { data } = await supabase
+      .from('wishlist')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('product_id', id)
+      .maybeSingle();
+    
+    setIsInWishlist(!!data);
+  }, [user, id]);
+
+  const toggleWishlist = async () => {
+    if (!user) {
+      Alert.alert('Login Required', 'Please sign in to save items.');
+      return;
+    }
+    if (!id) return;
+    
+    if (isInWishlist) {
+      const { error } = await supabase
+        .from('wishlist')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('product_id', id);
+      if (!error) setIsInWishlist(false);
+    } else {
+      const { error } = await supabase
+        .from('wishlist')
+        .insert({ user_id: user.id, product_id: id });
+      if (!error) setIsInWishlist(true);
+    }
+  };
 
   const fetchProduct = useCallback(async () => {
     try {
@@ -81,7 +116,10 @@ export default function ProductDetailScreen() {
 
   useEffect(() => {
     fetchProduct();
-  }, [fetchProduct]);
+    checkWishlist();
+  }, [fetchProduct, checkWishlist]);
+
+
 
 
 
@@ -162,9 +200,14 @@ export default function ProductDetailScreen() {
             <Pressable style={styles.iconBtn} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={24} color="#111111" />
             </Pressable>
-            <Pressable style={styles.iconBtn}>
-              <Ionicons name="heart-outline" size={24} color="#111111" />
+            <Pressable style={styles.iconBtn} onPress={toggleWishlist}>
+              <Ionicons 
+                name={isInWishlist ? "heart" : "heart-outline"} 
+                size={24} 
+                color={isInWishlist ? "#FF4B4B" : "#111111"} 
+              />
             </Pressable>
+
           </SafeAreaView>
 
           <View style={[styles.artworkGlow, { backgroundColor: product.accent, opacity: 0.2 }]} />
