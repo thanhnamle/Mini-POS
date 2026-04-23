@@ -27,12 +27,11 @@ type Product = {
   iconColor: string;
 };
 
-const CATEGORIES = ['All', 'Clothing', 'Accessories', 'Objects'];
-
 export default function ShopHomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { itemCount } = useCart();
+  const [categories, setCategories] = useState<string[]>(['All']);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -41,12 +40,29 @@ export default function ShopHomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    fetchProducts();
+    fetchInitialData();
   }, []);
+
+  const fetchInitialData = async () => {
+    try {
+      setLoading(true);
+      // 1. Fetch Categories dynamically
+      const { data: catData } = await supabase.from('categories').select('name');
+      if (catData) {
+        setCategories(['All', ...catData.map(c => c.name)]);
+      }
+
+      // 2. Fetch Products
+      await fetchProducts();
+    } catch (error) {
+      console.error('Initial fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('products')
         .select(`
@@ -56,17 +72,20 @@ export default function ShopHomeScreen() {
 
       if (error) throw error;
       
-      const mapped = (data || []).map(p => ({
-        ...p,
+      const mapped: Product[] = (data || []).map(p => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
         category: p.categories?.name || 'Collection',
-        iconColor: p.icon_color || '#111111'
+        surface: p.surface || '#F6F6F4',
+        accent: p.accent || '#EAE6DE',
+        icon: p.icon || 'shirt-outline',
+        iconColor: p.icon_color || '#111111',
       }));
       
       setProducts(mapped);
     } catch (err: any) {
       console.error('Fetch products error:', err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -138,7 +157,7 @@ export default function ShopHomeScreen() {
           </View>
 
           <View style={styles.categoryWrap}>
-            {CATEGORIES.map((category) => {
+            {categories.map((category) => {
               const active = category === selectedCategory;
 
               return (
