@@ -3,8 +3,9 @@ import { useCart } from '../../ctx/CartContext';
 import CartPreview from '../../components/CartPreview';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,25 +14,68 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { supabase } from '../../lib/supabase';
 
-import { products, Product, Category } from '../../constants/products';
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  surface: string;
+  accent: string;
+  icon: any;
+  iconColor: string;
+};
 
-const categories: Category[] = ['All', 'Apparel', 'Accessories', 'Objects'];
+const CATEGORIES = ['All', 'Clothing', 'Accessories', 'Objects'];
 
 export default function ShopHomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { itemCount } = useCart();
-  const [selectedCategory, setSelectedCategory] = useState<Category>('All');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [isCartVisible, setIsCartVisible] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          categories(name)
+        `);
+
+      if (error) throw error;
+      
+      const mapped = (data || []).map(p => ({
+        ...p,
+        category: p.categories?.name || 'Collection',
+        iconColor: p.icon_color || '#111111'
+      }));
+      
+      setProducts(mapped);
+    } catch (err: any) {
+      console.error('Fetch products error:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const visibleProducts = products.filter((product) => {
     const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
 
   return (
     <View style={styles.screen}>
@@ -94,7 +138,7 @@ export default function ShopHomeScreen() {
           </View>
 
           <View style={styles.categoryWrap}>
-            {categories.map((category) => {
+            {CATEGORIES.map((category) => {
               const active = category === selectedCategory;
 
               return (
@@ -111,23 +155,28 @@ export default function ShopHomeScreen() {
             })}
           </View>
 
-          <View style={styles.grid}>
-            {visibleProducts.map((product) => (
-              <Pressable
-                key={product.id}
-                style={styles.card}
-                onPress={() => router.push({
-                  pathname: '/(shop)/product/[id]',
-                  params: { id: product.id }
-                })}
-              >
-                <ProductArtwork product={product} />
-                <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productCategory}>{product.category}</Text>
-                <Text style={styles.productPrice}>${product.price.toFixed(2)}</Text>
-              </Pressable>
-            ))}
-          </View>
+          {loading ? (
+            <ActivityIndicator color="#111111" style={{ marginTop: 40 }} />
+          ) : (
+            <View style={styles.grid}>
+              {visibleProducts.map((product) => (
+                <Pressable
+                  key={product.id}
+                  style={styles.card}
+                  onPress={() => router.push({
+                    pathname: '/(shop)/product/[id]',
+                    params: { id: product.id }
+                  })}
+                >
+                  <ProductArtwork product={product} />
+                  <Text style={styles.productName}>{product.name}</Text>
+                  <Text style={styles.productCategory}>{product.category}</Text>
+                  <Text style={styles.productPrice}>${product.price.toFixed(2)}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+
         </ScrollView>
       </SafeAreaView>
 
@@ -338,10 +387,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000000',
-    shadowOpacity: 0.08,
+    shadowOpacity: 1,
     shadowRadius: 18,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 6,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 5,
   },
   artworkGlow: {
     position: 'absolute',

@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('role, points, rank, phone')
+        .select('role, loyalty_points, rank, phone')
         .eq('id', userId)
         .single();
 
@@ -42,10 +42,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setRole(metadataRole || 'customer');
       } else if (data) {
         setRole(data.role as Role);
-        setPoints(data.points || 0);
+        setPoints(data.loyalty_points || 0);
         setRank(data.rank || 'Bronze');
         setPhone(data.phone || '');
       }
+
     } catch (err) {
       console.error('Unexpected error fetching profile:', err);
       setRole(null);

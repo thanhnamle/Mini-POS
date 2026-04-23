@@ -94,7 +94,7 @@ export default function SignUpScreen() {
           id: data.user.id,
           full_name: fullName,
           username: username,
-          email: email, // Lưu thêm email để tra cứu login bằng username
+          email: email,
           role: 'customer',
         });
 

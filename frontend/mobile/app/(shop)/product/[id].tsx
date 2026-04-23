@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,18 +13,130 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { products } from '../../../constants/products';
+import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../ctx/AuthContext';
 import { useCart } from '../../../ctx/CartContext';
+
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  category_id: number;
+  image_url: string;
+  stock: number;
+  // UI fields
+  surface: string;
+  accent: string;
+  icon: any;
+  iconColor: string;
+  category: string;
+};
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const { addToCart } = useCart();
   
-  const product = products.find((p) => p.id === id);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState('M');
+  const [quantity, setQuantity] = useState(1);
+  const [showCartSuccess, setShowCartSuccess] = useState(false);
+  const [userRating, setUserRating] = useState(5);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [id]);
+
+  const fetchProduct = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          categories(name)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      
+      const mappedProduct: Product = {
+        ...data,
+        category: data.categories?.name || 'Collection',
+        surface: data.surface || '#F6F6F4',
+        accent: data.accent || '#EAE6DE',
+        icon: data.icon || 'shirt-outline',
+        iconColor: data.icon_color || '#111111',
+        description: data.description || 'No description available for this premium item.',
+      };
+      
+      setProduct(mappedProduct);
+    } catch (err: any) {
+      console.error('Fetch product error:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleAddToBag = () => {
+    if (!product) return;
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      description: product.description,
+      image: product.image_url || 'https://via.placeholder.com/150',
+      category: product.category,
+      icon: product.icon,
+      surface: product.surface,
+      accent: product.accent,
+      iconColor: product.iconColor,
+    };
+    // Add multiple times based on quantity
+    for(let i=0; i<quantity; i++) {
+      addToCart(cartItem as any, selectedSize);
+    }
+    setShowCartSuccess(true);
+  };
   
+  const handleBuyNow = () => {
+    if (!user) {
+      Alert.alert('Login Required', 'Please sign in to continue.');
+      return;
+    }
+    if (!product) return;
+
+    router.push({
+      pathname: '/(shop)/checkout',
+      params: { 
+        buyNowId: product.id,
+        buyNowName: product.name,
+        buyNowPrice: product.price,
+        buyNowSize: selectedSize,
+        buyNowQty: quantity
+      }
+    });
+  };
+
+  const incrementQty = () => setQuantity(prev => prev + 1);
+  const decrementQty = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+
+
+
+  if (loading) {
+    return (
+      <View style={styles.errorScreen}>
+        <ActivityIndicator color="#111111" />
+      </View>
+    );
+  }
+
   if (!product) {
     return (
       <View style={styles.errorScreen}>
@@ -35,24 +150,19 @@ export default function ProductDetailScreen() {
 
   const sizes = ['S', 'M', 'L', 'XL'];
 
-  const handleAddToBag = () => {
-    addToCart(product, selectedSize);
-    router.back();
-  };
-
   return (
     <View style={styles.screen}>
       <StatusBar style="dark" />
       
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 150 }}>
         {/* Artwork Header */}
         <View style={[styles.artworkFrame, { backgroundColor: product.surface }]}>
           <SafeAreaView edges={['top']} style={styles.headerRow}>
             <Pressable style={styles.iconBtn} onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={24} color={product.surface === '#FFFFFF' ? '#111111' : '#FFFFFF'} />
+              <Ionicons name="arrow-back" size={24} color="#111111" />
             </Pressable>
             <Pressable style={styles.iconBtn}>
-              <Ionicons name="heart-outline" size={24} color={product.surface === '#FFFFFF' ? '#111111' : '#FFFFFF'} />
+              <Ionicons name="heart-outline" size={24} color="#111111" />
             </Pressable>
           </SafeAreaView>
 
@@ -63,18 +173,45 @@ export default function ProductDetailScreen() {
         {/* Product Info */}
         <View style={styles.content}>
           <View style={styles.titleRow}>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.category}>{product.category}</Text>
               <Text style={styles.name}>{product.name}</Text>
             </View>
             <Text style={styles.price}>${product.price.toFixed(2)}</Text>
           </View>
 
-          <Text style={styles.description}>{product.description}</Text>
+          {/* Ratings & Sold */}
+          <View style={styles.metaRow}>
+            <View style={styles.ratingRow}>
+              <View style={styles.stars}>
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Pressable key={s} onPress={() => setUserRating(s)}>
+                    <Ionicons 
+                      name={s <= userRating ? "star" : "star-outline"} 
+                      size={18} 
+                      color={s <= userRating ? "#FFC107" : "#EAE6DE"} 
+                    />
+                  </Pressable>
+                ))}
+              </View>
+              <Text style={styles.ratingText}>{userRating.toFixed(1)}</Text>
+            </View>
+            <View style={styles.divider} />
+            <Text style={styles.soldText}>8.2k Sold</Text>
+          </View>
+
+          {/* Description Section */}
+          <View style={styles.descriptionContainer}>
+            <Text style={styles.descriptionTitle}>Description</Text>
+            <Text style={styles.description}>{product.description}</Text>
+          </View>
 
           {/* Size Selector */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>SELECT SIZE</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>SELECT SIZE</Text>
+              <Text style={styles.sizeGuide}>Size Guide</Text>
+            </View>
             <View style={styles.sizeRow}>
               {sizes.map((size) => (
                 <Pressable
@@ -88,39 +225,105 @@ export default function ProductDetailScreen() {
             </View>
           </View>
 
-          {/* Details */}
+          {/* Quantity Selector - Redesigned */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>DETAILS</Text>
-            <View style={styles.detailItem}>
-              <Ionicons name="shield-checkmark-outline" size={18} color="#6B6560" />
-              <Text style={styles.detailText}>Sustainable materials</Text>
+            <Text style={styles.sectionTitle}>QUANTITY</Text>
+            <View style={styles.qtyContainer}>
+              <Pressable style={styles.qtyActionBtn} onPress={decrementQty}>
+                <Ionicons name="remove" size={24} color="#111111" />
+              </Pressable>
+              <View style={styles.qtyValueContainer}>
+                <Text style={styles.qtyValueText}>{quantity.toString().padStart(2, '0')}</Text>
+              </View>
+              <Pressable style={styles.qtyActionBtn} onPress={incrementQty}>
+                <Ionicons name="add" size={24} color="#111111" />
+              </Pressable>
             </View>
-            <View style={styles.detailItem}>
-              <Ionicons name="refresh-outline" size={18} color="#6B6560" />
-              <Text style={styles.detailText}>30-day free returns</Text>
+          </View>
+
+          {/* Specifications */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>SPECIFICATIONS</Text>
+            <View style={styles.specGrid}>
+              <View style={styles.specItem}>
+                <Ionicons name="shield-checkmark" size={20} color="#1A1814" />
+                <Text style={styles.specLabel}>Premium</Text>
+              </View>
+              <View style={styles.specItem}>
+                <Ionicons name="leaf" size={20} color="#1A1814" />
+                <Text style={styles.specLabel}>Eco-Friendly</Text>
+              </View>
+              <View style={styles.specItem}>
+                <Ionicons name="airplane" size={20} color="#1A1814" />
+                <Text style={styles.specLabel}>Fast Shipping</Text>
+              </View>
             </View>
           </View>
         </View>
       </ScrollView>
 
+
       {/* Sticky Bottom Action */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) + 70 }]}>
-        <Pressable style={styles.primaryBtn} onPress={handleAddToBag}>
-          <Text style={styles.primaryBtnText}>ADD TO BAG</Text>
-          <View style={styles.btnIcon}>
-            <Ionicons name="bag-add-outline" size={18} color="#1A1814" />
-          </View>
-        </Pressable>
+        <View style={styles.buttonGroup}>
+          <Pressable style={styles.secondaryBtn} onPress={handleAddToBag}>
+            <Ionicons name="bag-add-outline" size={24} color="#1A1814" />
+          </Pressable>
+          
+          <Pressable 
+            style={styles.primaryBtn} 
+            onPress={handleBuyNow}
+          >
+            <Text style={styles.primaryBtnText}>BUY NOW</Text>
+            <View style={styles.btnIcon}>
+              <Ionicons name="flash" size={18} color="#1A1814" />
+            </View>
+          </Pressable>
+        </View>
       </View>
+
+      {/* Success Modal for Cart */}
+      <Modal visible={showCartSuccess} transparent animationType="fade">
+        <View style={styles.successOverlay}>
+          <View style={styles.successCard}>
+            <View style={styles.successIconContainer}>
+              <Ionicons name="bag-handle" size={80} color="#1A1814" />
+            </View>
+            <Text style={styles.successTitle}>Added to Bag</Text>
+            <Text style={styles.successSubtitle}>
+              {quantity}x {product.name} has been added to your shopping bag.
+            </Text>
+            <View style={styles.modalBtnRow}>
+              <Pressable 
+                style={[styles.successBtn, { backgroundColor: '#F5F5F5', flex: 1 }]} 
+                onPress={() => setShowCartSuccess(false)}
+              >
+                <Text style={[styles.successBtnText, { color: '#111111' }]}>Continue</Text>
+              </Pressable>
+              <View style={{ width: 12 }} />
+              <Pressable 
+                style={[styles.successBtn, { flex: 1 }]} 
+                onPress={() => {
+                  setShowCartSuccess(false);
+                  router.push('/(shop)/explore');
+                }}
+              >
+                <Text style={styles.successBtnText}>Checkout</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingBottom: 20,
   },
   errorScreen: {
     flex: 1,
@@ -185,61 +388,156 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
   },
   price: {
-    fontSize: 24,
-    fontWeight: '500',
+    fontSize: 28,
+    fontWeight: '800',
     color: '#1A1814',
   },
-  description: {
-    fontSize: 16,
-    lineHeight: 26,
-    color: '#6B6560',
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  stars: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 15,
+    color: '#1A1814',
+    fontWeight: '700',
+  },
+  divider: {
+    width: 1,
+    height: 14,
+    backgroundColor: '#EAE6DE',
+    marginHorizontal: 12,
+  },
+  soldText: {
+    fontSize: 14,
+    color: '#8C8478',
+    fontWeight: '500',
+  },
+  descriptionContainer: {
     marginBottom: 32,
+    padding: 20,
+    backgroundColor: '#F9F9F9',
+    borderRadius: 20,
+  },
+  descriptionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#111111',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  description: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: '#6B6560',
+    fontWeight: '400',
   },
   section: {
     marginBottom: 32,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     color: '#1A1814',
-    letterSpacing: 2,
-    marginBottom: 16,
+    letterSpacing: 1.5,
+  },
+  sizeGuide: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#BFA28C',
+    textDecorationLine: 'underline',
   },
   sizeRow: {
     flexDirection: 'row',
     gap: 12,
   },
-  sizeChip: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    borderWidth: 1,
-    borderColor: '#EAE6DE',
+  qtyContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 30,
+    width: 180,
+    height: 60,
+    padding: 6,
+  },
+  qtyActionBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  qtyValueContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qtyValueText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#111111',
+  },
+  sizeChip: {
+    width: 60,
+    height: 60,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#F0F0F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
   },
   sizeChipActive: {
     backgroundColor: '#1A1814',
     borderColor: '#1A1814',
   },
   sizeText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '800',
     color: '#1A1814',
   },
   sizeTextActive: {
     color: '#FFFFFF',
   },
-  detailItem: {
+  specGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    borderRadius: 20,
+    padding: 20,
   },
-  detailText: {
-    fontSize: 14,
-    color: '#6B6560',
-    fontWeight: '500',
+  specItem: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  specLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#8C8478',
+    textTransform: 'uppercase',
   },
   footer: {
     position: 'absolute',
@@ -251,8 +549,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#F4F1EC',
+    zIndex: 20,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+  },
+  secondaryBtn: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   primaryBtn: {
+    flex: 1,
     height: 60,
     borderRadius: 30,
     backgroundColor: '#1A1814',
@@ -275,4 +588,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Success Modal Styles
+  successOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  successCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 32,
+    padding: 32,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  successIconContainer: {
+    marginBottom: 24,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#1A1814',
+    marginBottom: 12,
+  },
+  successSubtitle: {
+    fontSize: 15,
+    color: '#6B6560',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 32,
+  },
+  modalBtnRow: {
+    flexDirection: 'row',
+    width: '100%',
+  },
+  successBtn: {
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#1A1814',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });
+
+

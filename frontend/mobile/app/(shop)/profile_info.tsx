@@ -37,6 +37,7 @@ export default function PersonalInformationScreen() {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const phoneInputRef = useRef<PhoneInput | null>(null);
 
+
   // 1. Fetch current profile data
   useEffect(() => {
     async function loadProfile() {
@@ -48,12 +49,11 @@ export default function PersonalInformationScreen() {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name, phone')
+          .select('full_name, phone, loyalty_points')
           .eq('id', user.id)
           .single();
 
         if (error) {
-          // If the profile doesn't exist or column is missing, we use metadata fallback
           console.warn('Profile fetch handled:', error.message);
         }
 
@@ -61,10 +61,10 @@ export default function PersonalInformationScreen() {
           setFullName(data.full_name || user.user_metadata?.full_name || '');
           setPhone(data.phone || user.user_metadata?.phone || '');
         } else {
-          // Fallback to auth metadata if profile row not found
           setFullName(user.user_metadata?.full_name || '');
           setPhone(user.user_metadata?.phone || '');
         }
+
 
       } catch (error: any) {
         console.error('Unexpected error loading profile:', error.message);
@@ -243,7 +243,7 @@ export default function PersonalInformationScreen() {
                           onFocus: () => setFocusedField('phone'),
                           onBlur: () => setFocusedField(null),
                           maxLength: 15,
-                          value: phone, // Ép hiển thị giá trị có dấu cách
+                          value: phone,
                         }}
 
 
@@ -560,6 +560,7 @@ const styles = StyleSheet.create({
   pickerFlagButton: {
     width: 60,
   },
+
 });
 
 

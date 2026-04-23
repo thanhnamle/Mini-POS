@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -10,9 +10,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {  useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
-import { format } from 'date-fns';
+import { format, isSameMonth, parseISO } from 'date-fns';
 
 type Order = {
   id: string;
@@ -30,9 +30,12 @@ export default function OrderHistoryScreen() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  // Tự động làm mới dữ liệu mỗi khi người dùng vào trang này
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrders();
+    }, [])
+  );
 
   const fetchOrders = async () => {
     try {
@@ -54,6 +57,15 @@ export default function OrderHistoryScreen() {
       setLoading(false);
     }
   };
+
+  // Áp dụng bộ lọc thực tế vào danh sách
+  const filteredOrders = orders.filter(order => {
+    if (filter === 'month') {
+      return isSameMonth(parseISO(order.created_at), new Date());
+    }
+    return true;
+  });
+
 
 
   const renderOrderItem = ({ item }: { item: Order }) => {
@@ -109,7 +121,8 @@ export default function OrderHistoryScreen() {
       </View>
 
       <FlatList
-        data={orders}
+        data={filteredOrders}
+
         keyExtractor={(item) => item.id}
         renderItem={renderOrderItem}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}

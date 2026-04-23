@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -13,29 +15,118 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCart } from '../../ctx/CartContext';
+import { useAuth } from '../../ctx/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 export default function CheckoutScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  const { user, refreshProfile } = useAuth();
+
   const { cart, clearCart } = useCart();
+  
   const [successVisible, setSuccessVisible] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('Credit Card');
+  const [earnedPoints, setEarnedPoints] = useState(0);
 
-  const handleProcessTransaction = () => {
-    // Show success popup instead of alert
-    setSuccessVisible(true);
+  // Tính toán trực tiếp checkoutItems thay vì dùng state + useEffect
+  const checkoutItems = params.buyNowId 
+    ? [{
+        id: params.buyNowId,
+        name: params.buyNowName,
+        price: parseFloat(params.buyNowPrice as string),
+        quantity: 1,
+        size: params.buyNowSize,
+        surface: '#F6F6F4',
+        icon: 'shirt-outline',
+        iconColor: '#111111'
+      }]
+    : cart;
+
+  const subtotal = checkoutItems.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
+  const tax = subtotal * 0.08; 
+  const grandTotal = subtotal + tax;
+
+
+  const handleProcessTransaction = async () => {
+    if (!user) return;
+    if (checkoutItems.length === 0) return;
+
+    try {
+      setProcessing(true);
+      const pointsToEarn = Math.floor(grandTotal);
+      setEarnedPoints(pointsToEarn);
+      
+      const orderNumber = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      // 1. Create Order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          order_number: orderNumber,
+          status: 'paid',
+          total_amount: grandTotal,
+          subtotal: subtotal,
+          tax_rate: 8.00,
+          items_count: checkoutItems.length,
+          payment_method: paymentMethod
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // 2. Create Order Items
+      const orderItemsToInsert = checkoutItems.map(item => ({
+        order_id: order.id,
+        product_id: item.id,
+        quantity: item.quantity || 1,
+        unit_price: item.price,
+        subtotal: item.price * (item.quantity || 1)
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItemsToInsert);
+
+      if (itemsError) throw itemsError;
+
+      // 3. Update Loyalty Points
+      const { error: loyaltyError } = await supabase.rpc('increment_loyalty_points', {
+        user_id_param: user.id,
+        points_to_add: pointsToEarn
+      });
+
+      if (loyaltyError) {
+        // Fallback if RPC fails
+        const { data: profile } = await supabase.from('profiles').select('loyalty_points').eq('id', user.id).single();
+        await supabase.from('profiles').update({ loyalty_points: (profile?.loyalty_points || 0) + pointsToEarn }).eq('id', user.id);
+      }
+
+      if (!params.buyNowId) {
+        clearCart();
+      }
+
+      // 5. Refresh user profile to show new points
+      await refreshProfile();
+
+      setSuccessVisible(true);
+
+    } catch (err: any) {
+      Alert.alert('Transaction Failed', err.message);
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  const handleNewOrder = () => {
+
+  const handleViewHistory = () => {
     setSuccessVisible(false);
-    clearCart();
-    router.replace('/(shop)/explore');
+    router.push('/(shop)/order_history');
   };
-
-
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * 0.07;
-  const serviceFee = 0.55;
-  const grandTotal = subtotal + tax + serviceFee;
 
   return (
     <View style={styles.screen}>
@@ -59,19 +150,20 @@ export default function CheckoutScreen() {
 
           {/* Order Items */}
           <View style={styles.itemsList}>
-            {cart.length === 0 ? (
-              <Text style={styles.emptyText}>No items in cart</Text>
+            {checkoutItems.length === 0 ? (
+              <Text style={styles.emptyText}>No items to checkout</Text>
             ) : (
-              cart.map((item, idx) => (
+              checkoutItems.map((item, idx) => (
                 <OrderItem 
                   key={`${item.id}-${idx}`}
                   name={item.name} 
-                  sku={item.id.slice(0, 8).toUpperCase()} 
+                  sku={(item.id as string).slice(0, 8).toUpperCase()} 
+
                   price={item.price} 
-                  qty={item.quantity}
-                  surface={item.surface}
-                  icon={item.icon}
-                  iconColor={item.iconColor}
+                  qty={item.quantity || 1}
+                  surface={item.surface || '#F6F6F4'}
+                  icon={item.icon || 'shirt-outline'}
+                  iconColor={item.iconColor || '#111111'}
                 />
               ))
             )}
@@ -93,12 +185,8 @@ export default function CheckoutScreen() {
                 <Text style={styles.breakdownValue}>${subtotal.toFixed(2)}</Text>
               </View>
               <View style={styles.breakdownRow}>
-                <Text style={styles.breakdownLabel}>Tax (7%)</Text>
+                <Text style={styles.breakdownLabel}>Tax (8%)</Text>
                 <Text style={styles.breakdownValue}>${tax.toFixed(2)}</Text>
-              </View>
-              <View style={styles.breakdownRow}>
-                <Text style={styles.breakdownLabel}>Service Fee</Text>
-                <Text style={styles.breakdownValue}>${serviceFee.toFixed(2)}</Text>
               </View>
             </View>
           </View>
@@ -111,29 +199,40 @@ export default function CheckoutScreen() {
               icon="cash-outline" 
               title="Cash" 
               sub="PHYSICAL TENDER" 
+              selected={paymentMethod === 'Cash'}
+              onPress={() => setPaymentMethod('Cash')}
             />
             <PaymentOption 
               icon="card-outline" 
-              title="Credit / Debit Card" 
+              title="Credit Card" 
               sub="CHIP & PIN, SWIPE" 
-              selected
+              selected={paymentMethod === 'Credit Card'}
+              onPress={() => setPaymentMethod('Credit Card')}
             />
             <PaymentOption 
               icon="wallet-outline" 
               title="Digital Wallet" 
               sub="APPLE PAY, GOOGLE PAY" 
+              selected={paymentMethod === 'Digital Wallet'}
+              onPress={() => setPaymentMethod('Digital Wallet')}
             />
           </View>
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) + 70 }]}>
           <Pressable 
-            style={[styles.mainBtn, cart.length === 0 && styles.disabledBtn]} 
+            style={[styles.mainBtn, (checkoutItems.length === 0 || processing) && styles.disabledBtn]} 
             onPress={handleProcessTransaction}
-            disabled={cart.length === 0}
+            disabled={checkoutItems.length === 0 || processing}
           >
-            <Text style={styles.mainBtnText}>PROCESS TRANSACTION</Text>
-            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+            {processing ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <>
+                <Text style={styles.mainBtnText}>PROCESS TRANSACTION</Text>
+                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+              </>
+            )}
           </Pressable>
         </View>
       </SafeAreaView>
@@ -153,14 +252,24 @@ export default function CheckoutScreen() {
             </View>
 
             <Text style={styles.successTitle}>Payment Successful</Text>
-            <Text style={styles.successSub}>Thank you for your purchase!{'\n'}Your receipt has been generated.</Text>
+            <Text style={styles.successSub}>Thank you for your purchase!{'\n'}Your order is now in your history.</Text>
 
-            <Pressable style={styles.newOrderBtn} onPress={handleNewOrder}>
-              <Text style={styles.newOrderBtnText}>New Order</Text>
+            {/* Points Badge */}
+            <View style={styles.pointsBadge}>
+              <Ionicons name="sparkles" size={16} color="#BFA28C" />
+              <Text style={styles.pointsBadgeText}>You earned {earnedPoints} loyalty points!</Text>
+            </View>
+
+
+            <Pressable style={styles.newOrderBtn} onPress={handleViewHistory}>
+              <Text style={styles.newOrderBtnText}>View Order History</Text>
             </Pressable>
 
-            <Pressable style={styles.printBtn}>
-              <Text style={styles.printBtnText}>Print Receipt</Text>
+            <Pressable style={styles.printBtn} onPress={() => {
+              setSuccessVisible(false);
+              router.replace('/(shop)/explore');
+            }}>
+              <Text style={styles.printBtnText}>Back to Shop</Text>
             </Pressable>
           </View>
         </View>
@@ -168,6 +277,7 @@ export default function CheckoutScreen() {
     </View>
   );
 }
+
 
 
 function OrderItem({ name, sku, price, qty, surface, icon, iconColor }: any) {
@@ -189,9 +299,9 @@ function OrderItem({ name, sku, price, qty, surface, icon, iconColor }: any) {
 }
 
 
-function PaymentOption({ icon, title, sub, selected }: { icon: any, title: string, sub: string, selected?: boolean }) {
+function PaymentOption({ icon, title, sub, selected, onPress }: { icon: any, title: string, sub: string, selected?: boolean, onPress: () => void }) {
   return (
-    <View style={[styles.paymentBtn, selected && styles.paymentBtnActive]}>
+    <Pressable onPress={onPress} style={[styles.paymentBtn, selected && styles.paymentBtnActive]}>
       <View style={styles.paymentIconBox}>
         <Ionicons name={icon} size={20} color="#111111" />
       </View>
@@ -204,9 +314,10 @@ function PaymentOption({ icon, title, sub, selected }: { icon: any, title: strin
       ) : (
         <Ionicons name="chevron-forward" size={20} color="#EAE6DE" />
       )}
-    </View>
+    </Pressable>
   );
 }
+
 
 const styles = StyleSheet.create({
   screen: {
@@ -518,5 +629,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  pointsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9F6F0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 24,
+    gap: 8,
+  },
+  pointsBadgeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#BFA28C',
+  },
 });
+
 

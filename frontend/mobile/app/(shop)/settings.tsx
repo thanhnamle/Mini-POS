@@ -32,7 +32,7 @@ export default function SettingsScreen() {
     try {
       if (!user?.id) return;
       
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('addresses')
         .select('street_number, ward, city')
         .eq('user_id', user.id)
@@ -55,7 +55,7 @@ export default function SettingsScreen() {
     try {
       if (!user?.id) return;
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('payment_methods')
         .select('brand, last_4')
         .eq('user_id', user.id)
@@ -67,14 +67,11 @@ export default function SettingsScreen() {
       } else {
         setDefaultPayment('Add a payment method');
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Fetch payment error:', err.message);
       setDefaultPayment('Add a payment method');
     }
   };
-
-
-
-
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
