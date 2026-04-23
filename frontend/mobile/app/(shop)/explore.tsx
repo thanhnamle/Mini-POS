@@ -4,9 +4,11 @@ import CartPreview from '../../components/CartPreview';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState, useCallback } from 'react';
+import { useAuth } from '../../ctx/AuthContext';
 
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -32,6 +34,7 @@ export default function ShopHomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { itemCount } = useCart();
+  const { user } = useAuth();
   const [categories, setCategories] = useState<string[]>(['All']);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,7 +150,10 @@ export default function ShopHomeScreen() {
                   </View>
 
                   <Pressable style={styles.avatar} onPress={() => router.push('/(shop)/settings')}>
-                    <Text style={styles.avatarText}>CA</Text>
+                    <Image
+                      source={user?.user_metadata?.avatar_url ? { uri: user?.user_metadata?.avatar_url } : { uri: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}` }}
+                      style={styles.avatarImg}
+                    />
                   </Pressable>
                 </View>
               </>
@@ -347,11 +353,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#0F172A12',
   },
-  avatarText: {
-    color: '#1F2937',
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.4,
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 21,
   },
   heroBlock: {
     marginBottom: 30,

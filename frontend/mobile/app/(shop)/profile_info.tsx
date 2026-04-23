@@ -21,6 +21,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../ctx/AuthContext';
 import { supabase } from '../../lib/supabase';
 import PhoneInput from 'react-native-phone-number-input';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function PersonalInformationScreen() {
   const router = useRouter();
@@ -126,13 +127,87 @@ export default function PersonalInformationScreen() {
 
   };
 
+  const pickImage = async () => {
+    // 1. Request permissions
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'We need access to your photos to change your avatar.');
+      return;
+    }
+
+    // 2. Launch picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      handleUploadAvatar(result.assets[0].uri);
+    }
+  };
+
+  const handleUploadAvatar = async (uri: string) => {
+    if (!user) return;
+    setLoading(true);
+
+    try {
+      const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+
+      // Convert URI to Blob
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      // 1. Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, blob, {
+          contentType: `image/${fileExt}`,
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // 2. Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // 3. Update Auth Metadata
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { avatar_url: publicUrl }
+      });
+
+      if (authError) throw authError;
+
+      // 4. Update Profiles Table
+      const { error: dbError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      // (Handle missing column gracefully like before)
+      if (dbError && !dbError.message.includes('column "avatar_url" of relation "profiles" does not exist')) {
+        throw dbError;
+      }
+
+      await refreshProfile();
+      Alert.alert('Success', 'Profile photo updated successfully.');
+    } catch (error: any) {
+      console.error('Avatar upload error:', error);
+      Alert.alert('Upload Failed', error.message || 'Make sure the "avatars" bucket exists and is public.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
 
   const formatPhoneNumber = (text: string) => {
-    // Loại bỏ tất cả ký tự không phải số
     const cleaned = text.replace(/\D/g, '');
     
-    // Định dạng theo cụm: 4 số - 3 số - 3 số (Tổng 10 số cho VN)
     let formatted = '';
     for (let i = 0; i < cleaned.length; i++) {
       if (i === 4 || i === 7) {
@@ -187,11 +262,19 @@ export default function PersonalInformationScreen() {
                 <View style={styles.photoSection}>
                   <View style={styles.avatarContainer}>
                     <Image 
-                      source={{ uri: `https://api.dicebear.com/7.x/avataaars/svg?seed=${fullName || 'Guest'}` }} 
+                      source={user?.user_metadata?.avatar_url 
+                        ? { uri: user.user_metadata.avatar_url } 
+                        : { uri: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id || 'Guest'}` }
+                      } 
                       style={styles.avatar}
                     />
+                    {loading && (
+                      <View style={styles.avatarLoading}>
+                        <ActivityIndicator color="#FFFFFF" />
+                      </View>
+                    )}
                   </View>
-                  <Pressable>
+                  <Pressable onPress={pickImage} disabled={loading}>
                     <Text style={styles.changePhotoText}>Change Photo</Text>
                   </Pressable>
                 </View>
@@ -394,6 +477,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#737373',
+  },
+  avatarLoading: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   form: {
     gap: 20,

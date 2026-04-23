@@ -38,7 +38,7 @@ export default function ProductDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { addToCart } = useCart();
+  const { addToCart, setCheckoutActive } = useCart();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -151,6 +151,7 @@ export default function ProductDetailScreen() {
     }
     if (!product) return;
 
+    setCheckoutActive(true);
     router.push({
       pathname: '/(shop)/checkout',
       params: { 
@@ -349,7 +350,7 @@ export default function ProductDetailScreen() {
                 style={[styles.successBtn, { flex: 1 }]} 
                 onPress={() => {
                   setShowCartSuccess(false);
-                  router.push('/(shop)/explore');
+                  router.push('/(shop)/checkout');
                 }}
               >
                 <Text style={styles.successBtnText}>Checkout</Text>

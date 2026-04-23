@@ -193,7 +193,7 @@ export default function OrderHistoryScreen() {
         <Pressable onPress={() => router.push('/(shop)/settings')} style={styles.headerBtn}>
           <Ionicons name="arrow-back" size={24} color="#1A1814" />
         </Pressable>
-        <Text style={styles.headerTitle}>Orders</Text>
+        <Text style={styles.headerTitle}>Profile</Text>
         <Pressable style={styles.headerBtn}>
           <Ionicons name="settings-outline" size={24} color="#1A1814" />
         </Pressable>

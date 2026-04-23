@@ -184,8 +184,16 @@ export default function SettingsScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>SUPPORT</Text>
-            <SettingsItem icon="help-circle-outline" label="Help Center" />
-            <SettingsItem icon="information-circle-outline" label="About Atelier" />
+            <SettingsItem 
+              icon="help-circle-outline" 
+              label="Help Center" 
+              onPress={() => router.push('/(shop)/help_center')}
+            />
+            <SettingsItem 
+              icon="information-circle-outline" 
+              label="About Atelier" 
+              onPress={() => router.push('/(shop)/about_atelier')}
+            />
           </View>
 
           <Pressable style={styles.signOutBtn} onPress={handleSignOut}>
@@ -380,7 +388,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
     marginTop: 20,
-    marginBottom: 10,
+    marginBottom: 1,
     padding: 16,
     borderRadius: 16,
     backgroundColor: '#FFF5F5',

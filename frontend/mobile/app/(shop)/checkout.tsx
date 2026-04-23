@@ -24,7 +24,7 @@ export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
   const { user, refreshProfile } = useAuth();
 
-  const { cart, clearCart } = useCart();
+  const { cart, clearCart, removeFromCart, isCheckoutActive, setCheckoutActive } = useCart();
   
   const [successVisible, setSuccessVisible] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -39,11 +39,12 @@ export default function CheckoutScreen() {
         price: parseFloat(params.buyNowPrice as string),
         quantity: 1,
         size: params.buyNowSize,
+        selectedSize: params.buyNowSize,
         surface: '#F6F6F4',
         icon: 'shirt-outline',
         iconColor: '#111111'
       }]
-    : cart;
+    : (isCheckoutActive ? cart : []);
 
   const subtotal = checkoutItems.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
   const tax = subtotal * 0.08; 
@@ -151,19 +152,29 @@ export default function CheckoutScreen() {
           {/* Order Items */}
           <View style={styles.itemsList}>
             {checkoutItems.length === 0 ? (
-              <Text style={styles.emptyText}>No items to checkout</Text>
+              <View style={styles.emptyContainer}>
+                <Ionicons name="bag-outline" size={80} color="#EAE6DE" />
+                <Text style={styles.emptyTitle}>Your Bag is Waiting</Text>
+                <Text style={styles.emptySub}>Please review your items in the bag and confirm "Proceed to Order" to start checkout.</Text>
+                <Pressable 
+                  style={styles.exploreBtn}
+                  onPress={() => router.replace('/(shop)/explore')}
+                >
+                  <Text style={styles.exploreBtnText}>CONTINUE SHOPPING</Text>
+                </Pressable>
+              </View>
             ) : (
               checkoutItems.map((item, idx) => (
                 <OrderItem 
                   key={`${item.id}-${idx}`}
                   name={item.name} 
                   sku={(item.id as string).slice(0, 8).toUpperCase()} 
-
                   price={item.price} 
                   qty={item.quantity || 1}
                   surface={item.surface || '#F6F6F4'}
                   icon={item.icon || 'shirt-outline'}
                   iconColor={item.iconColor || '#111111'}
+                  onDelete={!params.buyNowId ? () => removeFromCart(item.id as string, (item as any).selectedSize) : undefined}
                 />
               ))
             )}
@@ -280,7 +291,7 @@ export default function CheckoutScreen() {
 
 
 
-function OrderItem({ name, sku, price, qty, surface, icon, iconColor }: any) {
+function OrderItem({ name, sku, price, qty, surface, icon, iconColor, onDelete }: any) {
   return (
     <View style={styles.itemRow}>
       <View style={[styles.itemThumb, { backgroundColor: surface, alignItems: 'center', justifyContent: 'center' }]}>
@@ -294,6 +305,11 @@ function OrderItem({ name, sku, price, qty, surface, icon, iconColor }: any) {
         <Text style={styles.itemPrice}>${price.toFixed(2)}</Text>
         <Text style={styles.itemQty}>QTY: {qty.toString().padStart(2, '0')}</Text>
       </View>
+      {onDelete && (
+        <Pressable onPress={onDelete} style={styles.itemDeleteBtn}>
+          <Ionicons name="trash-outline" size={18} color="#FF4B4B" />
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -432,6 +448,48 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#8C8478',
+  },
+  itemDeleteBtn: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 32,
+    marginTop: 20,
+    paddingHorizontal: 32,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#111111',
+    marginTop: 24,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySub: {
+    fontSize: 14,
+    color: '#8C8478',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 32,
+  },
+  exploreBtn: {
+    height: 56,
+    paddingHorizontal: 32,
+    backgroundColor: '#111111',
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exploreBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   totalCard: {
     backgroundColor: '#111111',

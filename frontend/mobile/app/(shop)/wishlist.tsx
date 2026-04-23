@@ -140,7 +140,7 @@ export default function WishlistScreen() {
       
       <SafeAreaView edges={['top']} style={styles.header}>
         <View style={styles.headerTop}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Pressable onPress={() => router.push('/(shop)/settings')} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#111111" />
           </Pressable>
           <Text style={styles.headerTitle}>Profile</Text>

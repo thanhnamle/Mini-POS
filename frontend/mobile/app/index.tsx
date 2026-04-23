@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#2bff00ff',
   },
   topBarPillText: {
     color: '#FFFFFF',

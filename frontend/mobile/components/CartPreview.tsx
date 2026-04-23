@@ -11,7 +11,7 @@ interface CartPreviewProps {
 
 export default function CartPreview({ visible, onClose }: CartPreviewProps) {
   const router = useRouter();
-  const { cart, totalAmount, itemCount } = useCart();
+  const { cart, totalAmount, itemCount, removeFromCart, prepareCheckout } = useCart();
 
   return (
     <Modal
@@ -57,6 +57,12 @@ export default function CartPreview({ visible, onClose }: CartPreviewProps) {
                       <Text style={styles.previewItemVariant}>SIZE {item.selectedSize}</Text>
                     </View>
                   </View>
+                  <Pressable 
+                    style={styles.removeItemBtn} 
+                    onPress={() => removeFromCart(item.id, item.selectedSize)}
+                  >
+                    <Ionicons name="trash-outline" size={20} color="#FF4B4B" />
+                  </Pressable>
                 </View>
               ))
             )}
@@ -82,6 +88,7 @@ export default function CartPreview({ visible, onClose }: CartPreviewProps) {
               style={[styles.proceedBtn, cart.length === 0 && styles.disabledBtn]}
               disabled={cart.length === 0}
               onPress={() => {
+                prepareCheckout();
                 onClose();
                 router.push('/(shop)/checkout');
               }}
@@ -200,6 +207,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#8C8478',
+  },
+  removeItemBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
   },
   giftWrapBox: {
     flexDirection: 'row',
