@@ -3,7 +3,8 @@ import { useCart } from '../../ctx/CartContext';
 import CartPreview from '../../components/CartPreview';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+
 import {
   ActivityIndicator,
   Pressable,
@@ -39,29 +40,7 @@ export default function ShopHomeScreen() {
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
-  const fetchInitialData = async () => {
-    try {
-      setLoading(true);
-      // 1. Fetch Categories dynamically
-      const { data: catData } = await supabase.from('categories').select('name');
-      if (catData) {
-        setCategories(['All', ...catData.map(c => c.name)]);
-      }
-
-      // 2. Fetch Products
-      await fetchProducts();
-    } catch (error) {
-      console.error('Initial fetch error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('products')
@@ -87,7 +66,30 @@ export default function ShopHomeScreen() {
     } catch (err: any) {
       console.error('Fetch products error:', err.message);
     }
-  };
+  }, []);
+
+  const fetchInitialData = useCallback(async () => {
+    try {
+      setLoading(true);
+      // 1. Fetch Categories dynamically
+      const { data: catData } = await supabase.from('categories').select('name');
+      if (catData) {
+        setCategories(['All', ...catData.map(c => c.name)]);
+      }
+
+      // 2. Fetch Products
+      await fetchProducts();
+    } catch (error) {
+      console.error('Initial fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
+
 
   const visibleProducts = products.filter((product) => {
     const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;

@@ -113,8 +113,8 @@ export default function OrderHistoryScreen() {
   );
 
   const renderOrderItem = ({ item }: { item: Order }) => {
-    const isRefunded = item.status === 'Paid'; // Adjusting based on your Paid status
     const isExpanded = expandedOrderId === item.id;
+
     const date = new Date(item.created_at);
     
     return (

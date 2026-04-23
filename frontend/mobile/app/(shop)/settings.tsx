@@ -16,19 +16,11 @@ import { supabase } from '../../lib/supabase';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { user, role, points, rank, phone } = useAuth();
+  const { user, points, rank, phone } = useAuth();
   const [defaultAddress, setDefaultAddress] = useState<string | null>(null);
   const [defaultPayment, setDefaultPayment] = useState<string | null>(null);
 
-  // Fetch default data whenever screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      fetchDefaultAddress();
-      fetchDefaultPayment();
-    }, [user?.id])
-  );
-
-  const fetchDefaultAddress = async () => {
+  const fetchDefaultAddress = useCallback(async () => {
     try {
       if (!user?.id) return;
       
@@ -49,9 +41,9 @@ export default function SettingsScreen() {
       console.error('Fetch address error:', err.message);
       setDefaultAddress('Set your shipping address');
     }
-  };
+  }, [user?.id]);
 
-  const fetchDefaultPayment = async () => {
+  const fetchDefaultPayment = useCallback(async () => {
     try {
       if (!user?.id) return;
 
@@ -71,7 +63,16 @@ export default function SettingsScreen() {
       console.error('Fetch payment error:', err.message);
       setDefaultPayment('Add a payment method');
     }
-  };
+  }, [user?.id]);
+
+  // Fetch default data whenever screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchDefaultAddress();
+      fetchDefaultPayment();
+    }, [fetchDefaultAddress, fetchDefaultPayment])
+  );
+
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -146,8 +147,10 @@ export default function SettingsScreen() {
             <SettingsItem 
               icon="person-outline" 
               label="Personal Information" 
+              subLabel={phone || 'Add your phone number'}
               onPress={() => router.push('/(shop)/profile_info')}
             />
+
             <SettingsItem 
               icon="location-outline" 
               label="Shipping Addresses" 

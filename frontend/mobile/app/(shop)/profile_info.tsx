@@ -16,7 +16,7 @@ import {
 
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../ctx/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -24,11 +24,10 @@ import PhoneInput from 'react-native-phone-number-input';
 
 export default function PersonalInformationScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { user, refreshProfile } = useAuth();
 
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState(user?.email || '');
+  const [email] = useState(user?.email || '');
   const [phone, setPhone] = useState('');
   const [formattedPhone, setFormattedPhone] = useState('');
   const [loading, setLoading] = useState(false);
@@ -92,12 +91,13 @@ export default function PersonalInformationScreen() {
         phone;
 
       // 1. Update Auth Metadata
-      const { data: updateData, error: authError } = await supabase.auth.updateUser({
+      const { error: authError } = await supabase.auth.updateUser({
         data: { 
           full_name: fullName,
           phone: fullPhoneNumber 
         }
       });
+
       if (authError) throw authError;
 
       // 2. Update Profiles Table
