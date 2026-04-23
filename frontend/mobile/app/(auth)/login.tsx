@@ -66,27 +66,42 @@ export default function LoginScreen() {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('email')
-          .eq('username', finalEmail.toLowerCase())
-          .single();
+          .ilike('username', finalEmail.trim())
+          .maybeSingle();
 
-        if (profileError || !profile?.email) {
-          setError('Username not found or has no email associated');
+        if (profileError) {
+          console.error('Username lookup error:', profileError.message);
+          setError(`Database Error: ${profileError.message}`);
           setLoading(false);
           return;
         }
+
+        if (!profile) {
+          // If no profile found, it might be an RLS issue or the username truly doesn't exist
+          setError(`Username "${finalEmail}" not found. Check your spelling or use email.`);
+          setLoading(false);
+          return;
+        }
+        
+        if (!profile.email) {
+          setError('Username exists but has no email linked.');
+          setLoading(false);
+          return;
+        }
+        
         finalEmail = profile.email;
       }
 
-      // 2. Sign in
+      // 2. Sign in with the resolved email
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: finalEmail,
         password,
       });
 
-
-
       if (signInError) {
-        setError(signInError.message);
+        setError(signInError.message === 'Invalid login credentials' 
+          ? 'Incorrect email/username or password' 
+          : signInError.message);
         setLoading(false);
         return;
       }

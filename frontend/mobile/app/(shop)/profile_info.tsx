@@ -22,15 +22,18 @@ import { useAuth } from '../../ctx/AuthContext';
 import { supabase } from '../../lib/supabase';
 import PhoneInput from 'react-native-phone-number-input';
 import * as ImagePicker from 'expo-image-picker';
+import { decode } from 'base64-arraybuffer';
 
 export default function PersonalInformationScreen() {
   const router = useRouter();
   const { user, refreshProfile } = useAuth();
 
   const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
   const [email] = useState(user?.email || '');
   const [phone, setPhone] = useState('');
   const [formattedPhone, setFormattedPhone] = useState('');
+  const [role, setRole] = useState('customer');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -49,7 +52,7 @@ export default function PersonalInformationScreen() {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name, phone, loyalty_points')
+          .select('full_name, username, phone, loyalty_points, role')
           .eq('id', user.id)
           .single();
 
@@ -59,9 +62,12 @@ export default function PersonalInformationScreen() {
 
         if (data) {
           setFullName(data.full_name || user.user_metadata?.full_name || '');
+          setUsername(data.username || user.user_metadata?.username || '');
           setPhone(data.phone || user.user_metadata?.phone || '');
+          setRole(data.role || 'customer');
         } else {
           setFullName(user.user_metadata?.full_name || '');
+          setUsername(user.user_metadata?.username || '');
           setPhone(user.user_metadata?.phone || '');
         }
 
@@ -69,6 +75,7 @@ export default function PersonalInformationScreen() {
       } catch (error: any) {
         console.error('Unexpected error loading profile:', error.message);
         setFullName(user.user_metadata?.full_name || '');
+        setUsername(user.user_metadata?.username || '');
         setPhone(user.user_metadata?.phone || '');
       } finally {
         // ALWAYS end loading state
@@ -95,21 +102,25 @@ export default function PersonalInformationScreen() {
       const { error: authError } = await supabase.auth.updateUser({
         data: { 
           full_name: fullName,
+          username: username.toLowerCase().trim(),
           phone: fullPhoneNumber 
         }
       });
 
       if (authError) throw authError;
 
-      // 2. Update Profiles Table
+      // 2. Upsert Profiles Table (Insert if missing, Update if exists)
       const { error: dbError } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: user.id, // ID is required for upsert to know which row to target
           full_name: fullName,
+          username: username.toLowerCase().trim(),
           phone: fullPhoneNumber,
           updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
+          email: user.email,
+          role: role, // Include the role to satisfy the check constraint
+        });
 
       // If it's just a 'missing column' error, we don't alert the user yet
       // because we already saved to metadata.
@@ -141,14 +152,15 @@ export default function PersonalInformationScreen() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.5,
+      base64: true, // Enable base64
     });
 
-    if (!result.canceled) {
-      handleUploadAvatar(result.assets[0].uri);
+    if (!result.canceled && result.assets[0].base64) {
+      handleUploadAvatar(result.assets[0].base64, result.assets[0].uri);
     }
   };
 
-  const handleUploadAvatar = async (uri: string) => {
+  const handleUploadAvatar = async (base64: string, uri: string) => {
     if (!user) return;
     setLoading(true);
 
@@ -156,14 +168,10 @@ export default function PersonalInformationScreen() {
       const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
       const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
-      // Convert URI to Blob
-      const response = await fetch(uri);
-      const blob = await response.blob();
-
-      // 1. Upload to Supabase Storage
+      // 1. Upload to Supabase Storage using base64 decode
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, blob, {
+        .upload(filePath, decode(base64), {
           contentType: `image/${fileExt}`,
           upsert: true
         });
@@ -288,6 +296,17 @@ export default function PersonalInformationScreen() {
                       value={fullName}
                       onChangeText={setFullName}
                       placeholder="Enter your full name"
+                    />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Username</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={username}
+                      onChangeText={(v) => setUsername(v.toLowerCase().trim())}
+                      placeholder="username"
+                      autoCapitalize="none"
                     />
                   </View>
 

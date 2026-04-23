@@ -89,6 +89,14 @@ export default function SettingsScreen() {
   };
 
   const rankInfo = getNextRankInfo();
+  const formatPhone = (phoneStr: string) => {
+    if (!phoneStr) return null;
+    if (phoneStr.startsWith('+84')) {
+      return `(+84) ${phoneStr.slice(3).trim()}`;
+    }
+    return phoneStr;
+  };
+
   const progress = (rankInfo.current / rankInfo.target) * 100;
 
   return (
@@ -147,7 +155,7 @@ export default function SettingsScreen() {
             <SettingsItem 
               icon="person-outline" 
               label="Personal Information" 
-              subLabel={phone || 'Add your phone number'}
+              subLabel={formatPhone(phone) || 'Add your phone number'}
               onPress={() => router.push('/(shop)/profile_info')}
             />
 
