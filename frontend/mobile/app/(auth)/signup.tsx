@@ -124,7 +124,7 @@ export default function SignUpScreen() {
         <Ionicons 
           name={icon} 
           size={18} 
-          color={focusedField === fieldKey ? '#1A1814' : '#A09890'} 
+          color={focusedField === fieldKey ? '#000000' : '#999999'} 
           style={styles.inputIcon} 
         />
         <TextInput
@@ -214,7 +214,7 @@ export default function SignUpScreen() {
                   <Ionicons 
                     name="lock-closed-outline" 
                     size={18} 
-                    color={focusedField === 'pass' ? '#1A1814' : '#A09890'} 
+                    color={focusedField === 'pass' ? '#000000' : '#999999'} 
                     style={styles.inputIcon} 
                   />
                   <TextInput
@@ -249,7 +249,7 @@ export default function SignUpScreen() {
               >
                 <Text style={styles.submitBtnText}>{loading ? 'CREATING...' : 'SIGN UP'}</Text>
                 <View style={styles.submitBtnIcon}>
-                  <Ionicons name={loading ? 'sync' : 'arrow-forward'} size={16} color="#1A1814" />
+                  <Ionicons name={loading ? 'sync' : 'arrow-forward'} size={16} color="#000000" />
                 </View>
               </Pressable>
 
@@ -272,7 +272,7 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EDE9E2',
+    backgroundColor: '#FFFFFF',
   },
   orb: {
     position: 'absolute',
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: '#E2DDD4',
+    backgroundColor: '#F5F5F5',
     opacity: 0.6,
   },
   scrollContent: {
@@ -295,30 +295,30 @@ const styles = StyleSheet.create({
   brand: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#1A1814',
+    color: '#000000',
     letterSpacing: 2,
   },
   titleUnderline: {
     width: 24,
     height: 2,
-    backgroundColor: '#1A1814',
+    backgroundColor: '#000000',
     marginTop: 4,
     marginBottom: 16,
-    opacity: 0.2,
+    opacity: 0.1,
   },
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#1A1814',
+    color: '#000000',
     letterSpacing: -1,
   },
   subtitle: {
     fontSize: 14,
-    color: '#8C8478',
+    color: '#666666',
     marginTop: 4,
   },
   card: {
-    backgroundColor: '#F4F1EC',
+    backgroundColor: '#F9F9F9',
     borderRadius: 32,
     padding: 24,
     shadowColor: '#000',
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#8C8478',
+    color: '#000000',
     letterSpacing: 1,
     marginBottom: 8,
     marginLeft: 4,
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EAE6DE',
+    backgroundColor: '#F2F2F2',
     borderRadius: 16,
     height: 56,
     paddingHorizontal: 16,
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   inputWrapFocused: {
-    borderColor: '#C8B890',
+    borderColor: '#000000',
     backgroundColor: '#FFFFFF',
   },
   phoneInputWrap: {
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#1A1814',
+    color: '#000000',
   },
   eyeBtn: {
     padding: 8,
@@ -393,14 +393,14 @@ const styles = StyleSheet.create({
   pickerCodeText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1A1814',
+    color: '#000000',
     marginRight: 8,
   },
   pickerInput: {
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#1A1814',
+    color: '#000000',
     paddingVertical: 0,
   },
 
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1A1814',
+    backgroundColor: '#000000',
     height: 60,
     borderRadius: 30,
     gap: 12,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   submitBtnText: {
-    color: '#F4F1EC',
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: 1,
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#C8B890',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -451,11 +451,11 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   footerText: {
-    color: '#8C8478',
+    color: '#666666',
     fontSize: 14,
   },
   footerLink: {
-    color: '#1A1814',
+    color: '#000000',
     fontSize: 14,
     fontWeight: '800',
   },

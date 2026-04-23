@@ -168,7 +168,7 @@ export default function LoginScreen() {
                   <Ionicons
                     name="person-outline"
                     size={18}
-                    color={identifierFocused ? '#1A1814' : '#A09890'}
+                    color={identifierFocused ? '#000000' : '#999999'}
                     style={s.inputIcon}
                   />
                   <TextInput
@@ -198,7 +198,7 @@ export default function LoginScreen() {
                   <Ionicons
                     name="lock-closed-outline"
                     size={18}
-                    color={passwordFocused ? '#1A1814' : '#A09890'}
+                    color={passwordFocused ? '#000000' : '#999999'}
                     style={s.inputIcon}
                   />
                   <TextInput
@@ -237,7 +237,7 @@ export default function LoginScreen() {
               >
                 <Text style={s.primaryBtnText}>{loading ? 'SIGNING IN...' : 'SIGN IN'}</Text>
                 <View style={s.primaryBtnArrow}>
-                  <Ionicons name={loading ? 'sync' : 'key'} size={14} color="#1A1814" />
+                  <Ionicons name={loading ? 'sync' : 'key'} size={14} color="#000000" />
                 </View>
               </Pressable>
 
@@ -264,7 +264,7 @@ export default function LoginScreen() {
 const s = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#EDE9E2',
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     flexGrow: 1,
@@ -283,7 +283,7 @@ const s = StyleSheet.create({
     width: 260,
     height: 260,
     borderRadius: 130,
-    backgroundColor: '#EAE5DC',
+    backgroundColor: '#F5F5F5',
     opacity: 0.7,
   },
   orb2: {
@@ -293,7 +293,7 @@ const s = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: '#E8E2D8',
+    backgroundColor: '#F9F9F9',
     opacity: 0.5,
   },
 
@@ -310,7 +310,7 @@ const s = StyleSheet.create({
     marginBottom: 20,
   },
   brand: {
-    color: '#1A1814',
+    color: '#000000',
     fontSize: 16,
     fontWeight: '900',
     letterSpacing: -0.5,
@@ -322,12 +322,12 @@ const s = StyleSheet.create({
   },
   decoLine: {
     height: 1.5,
-    backgroundColor: '#1A1814',
+    backgroundColor: '#000000',
     borderRadius: 1,
-    opacity: 0.15,
+    opacity: 0.1,
   },
   panelHeadline: {
-    color: '#1A1814',
+    color: '#000000',
     fontSize: 50,
     fontWeight: '900',
     letterSpacing: -2.5,
@@ -336,7 +336,7 @@ const s = StyleSheet.create({
     textAlign: 'center',
   },
   panelSub: {
-    color: '#8C8478',
+    color: '#666666',
     fontSize: 15,
     letterSpacing: 0.1,
     textAlign: 'center',
@@ -344,12 +344,12 @@ const s = StyleSheet.create({
 
   // ── FORM CARD - New Design ──
   formCard: {
-    backgroundColor: '#F4F1EC',
+    backgroundColor: '#F9F9F9',
     marginHorizontal: FORM_CARD_MARGIN,
     borderRadius: 28,
     padding: SWITCHER_PADDING,
-    shadowColor: '#1A1814',
-    shadowOpacity: 0.1,
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
     shadowRadius: 30,
     shadowOffset: { width: 0, height: 10 },
     elevation: 10,
@@ -360,7 +360,7 @@ const s = StyleSheet.create({
     marginBottom: 24,
   },
   fieldLabel: {
-    color: '#8C8478',
+    color: '#000000',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.2,
@@ -373,14 +373,14 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   forgotText: {
-    color: '#1A1814',
+    color: '#000000',
     fontSize: 12,
     fontWeight: '700',
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EAE6DE',
+    backgroundColor: '#F2F2F2',
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: 'transparent',
@@ -388,7 +388,7 @@ const s = StyleSheet.create({
     height: 56,
   },
   inputWrapFocused: {
-    borderColor: '#C8B890',
+    borderColor: '#000000',
     backgroundColor: '#FFFFFF',
   },
   inputIcon: {
@@ -396,7 +396,7 @@ const s = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: '#1A1814',
+    color: '#000000',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -407,18 +407,18 @@ const s = StyleSheet.create({
   primaryBtn: {
     height: 58,
     borderRadius: 29,
-    backgroundColor: '#1A1814',
+    backgroundColor: '#000000',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center', // Căn giữa nội dung
+    justifyContent: 'center', 
     marginTop: 10,
     marginBottom: 24,
     paddingHorizontal: 20,
-    position: 'relative', // Để định vị icon nếu cần, nhưng ở đây dùng gap
+    position: 'relative', 
     gap: 12,
   },
   primaryBtnText: {
-    color: '#F4F1EC',
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: 1,
@@ -427,7 +427,7 @@ const s = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#C8B890',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -444,7 +444,7 @@ const s = StyleSheet.create({
     padding: 10,
   },
   backBtnText: {
-    color: '#8C8478',
+    color: '#666666',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -457,11 +457,11 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   switchAuthText: {
-    color: '#8C8478',
+    color: '#666666',
     fontSize: 14,
   },
   switchAuthLink: {
-    color: '#1A1814',
+    color: '#000000',
     fontSize: 14,
     fontWeight: '800',
   },

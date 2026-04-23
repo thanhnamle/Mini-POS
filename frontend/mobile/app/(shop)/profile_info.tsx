@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../ctx/AuthContext';
 import { supabase } from '../../lib/supabase';
+import PhoneInput from 'react-native-phone-number-input';
 
 export default function PersonalInformationScreen() {
   const router = useRouter();
@@ -29,9 +30,12 @@ export default function PersonalInformationScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState('');
+  const [formattedPhone, setFormattedPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const phoneInputRef = useRef<PhoneInput | null>(null);
 
   // 1. Fetch current profile data
   useEffect(() => {
@@ -82,23 +86,26 @@ export default function PersonalInformationScreen() {
     setLoading(true);
 
     try {
-      // 1. Update Auth Metadata (Ghi đè vào raw_user_meta_data)
+      const fullPhoneNumber = 
+        phoneInputRef.current?.getNumberAfterPossiblyEliminatingZero()?.formattedNumber || 
+        formattedPhone || 
+        phone;
+
+      // 1. Update Auth Metadata
       const { data: updateData, error: authError } = await supabase.auth.updateUser({
         data: { 
           full_name: fullName,
-          phone: phone 
+          phone: fullPhoneNumber 
         }
       });
       if (authError) throw authError;
-      console.log('Metadata updated:', updateData.user.user_metadata);
 
-
-      // 2. Update Profiles Table (May fail if column is missing, but we catch it)
+      // 2. Update Profiles Table
       const { error: dbError } = await supabase
         .from('profiles')
         .update({
           full_name: fullName,
-          phone: phone, // This might fail if column is missing
+          phone: fullPhoneNumber,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -121,9 +128,26 @@ export default function PersonalInformationScreen() {
 
 
 
+  const formatPhoneNumber = (text: string) => {
+    // Loại bỏ tất cả ký tự không phải số
+    const cleaned = text.replace(/\D/g, '');
+    
+    // Định dạng theo cụm: 4 số - 3 số - 3 số (Tổng 10 số cho VN)
+    let formatted = '';
+    for (let i = 0; i < cleaned.length; i++) {
+      if (i === 4 || i === 7) {
+        formatted += ' ';
+      }
+      formatted += cleaned[i];
+    }
+    return formatted.trim();
+  };
+
+
   return (
     <View style={styles.screen}>
       <StatusBar style="dark" />
+
       
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
@@ -131,7 +155,7 @@ export default function PersonalInformationScreen() {
           <Pressable style={styles.iconBtn} onPress={() => router.push('/(shop)/settings')}>
             <Ionicons name="arrow-back" size={24} color="#111111" />
           </Pressable>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerTitle}>Account</Text>
           <Pressable style={styles.iconBtn}>
             <Ionicons name="settings-outline" size={24} color="#111111" />
           </Pressable>
@@ -194,15 +218,43 @@ export default function PersonalInformationScreen() {
                     <Text style={{ fontSize: 10, color: '#8C8478' }}>Email cannot be changed here</Text>
                   </View>
 
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Phone Number</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={phone}
-                      onChangeText={setPhone}
-                      keyboardType="phone-pad"
-                      placeholder="+xx xxx xxx xxxx"
-                    />
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.fieldLabel}>PHONE NUMBER</Text>
+                    <View style={[styles.inputWrap, styles.phoneInputWrap, focusedField === 'phone' && styles.inputWrapFocused]}>
+                      <PhoneInput
+                        ref={phoneInputRef}
+                        defaultCode="VN"
+                        value={phone}
+                        layout="first"
+                        onChangeText={(text) => {
+                          const formatted = formatPhoneNumber(text);
+                          setPhone(formatted);
+                        }}
+                        onChangeFormattedText={(text) => setFormattedPhone(text)}
+                        containerStyle={styles.pickerContainer}
+                        textContainerStyle={styles.pickerTextContainer}
+                        textInputStyle={styles.pickerInput}
+                        codeTextStyle={styles.pickerCodeText}
+                        flagButtonStyle={styles.pickerFlagButton}
+                        countryPickerButtonStyle={styles.pickerFlagButton}
+                        textInputProps={{
+                          placeholder: '0389 921 661',
+                          placeholderTextColor: '#C0B8B0',
+                          onFocus: () => setFocusedField('phone'),
+                          onBlur: () => setFocusedField(null),
+                          maxLength: 15,
+                          value: phone, // Ép hiển thị giá trị có dấu cách
+                        }}
+
+
+                        countryPickerProps={{
+                          withAlphaFilter: true,
+                          withCallingCode: true,
+                          withEmoji: true,
+                        }}
+                      />
+
+                    </View>
                   </View>
                 </View>
 
@@ -455,5 +507,59 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
   },
+  // Field Styles
+  fieldGroup: {
+    marginBottom: 24,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#8C8478',
+    letterSpacing: 1,
+    marginBottom: 12,
+  },
+  inputWrap: {
+    height: 56,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E8E4E0',
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  inputWrapFocused: {
+    borderColor: '#111111',
+    borderWidth: 1.5,
+  },
+  phoneInputWrap: {
+    paddingHorizontal: 0,
+    overflow: 'hidden',
+  },
+  pickerContainer: {
+    width: '100%',
+    height: 54,
+    backgroundColor: 'transparent',
+  },
+  pickerTextContainer: {
+    backgroundColor: 'transparent',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  pickerInput: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111111',
+    height: 54,
+  },
+  pickerCodeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111111',
+  },
+  pickerFlagButton: {
+    width: 60,
+  },
 });
+
 

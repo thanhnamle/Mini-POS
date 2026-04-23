@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -85,7 +86,7 @@ function FeatureRow({ title, description, icon, index }: Feature) {
 
       {/* Icon circle */}
       <View style={styles.featureIconCircle}>
-        <Ionicons name={icon} size={20} color="#F8F5F0" />
+        <Ionicons name={icon} size={20} color="#FFFFFF" />
       </View>
 
       {/* Text */}
@@ -121,74 +122,17 @@ function HeroScene() {
 
   return (
     <View style={styles.heroContainer}>
-      {/* Warm ambient glow behind */}
-      <View style={styles.heroGlowOuter} />
-
-      {/* Room frame */}
-      <View style={styles.heroRoom}>
-        {/* Ceiling shadow band */}
-        <View style={styles.heroCeilingBand} />
-
-        {/* Back wall */}
-        <View style={styles.heroWall}>
-          {/* Niche / alcove */}
-          <View style={styles.heroNiche}>
-            <View style={styles.heroNicheInner} />
-          </View>
-        </View>
-
-        {/* Pendant lamps */}
-        {[
-          { left: '16%' as const, stemH: 52, delay: 0 },
-          { left: '33%' as const, stemH: 70, delay: 80 },
-          { left: '56%' as const, stemH: 60, delay: 40 },
-          { left: '74%' as const, stemH: 44, delay: 120 },
-        ].map(({ left, stemH, delay }, i) => (
-          <PendantLamp key={i} left={left} stemHeight={stemH} pulseAnim={pulseAnim} />
-        ))}
-
-        {/* Floor reflection strip */}
-        <View style={styles.heroFloorStrip} />
-
-        {/* Counter */}
-        <View style={styles.heroCounter}>
-          <View style={styles.heroCounterSurface} />
-          <View style={styles.heroCounterBody} />
-          <View style={styles.heroCounterBase} />
-        </View>
-
-        {/* Floor */}
-        <View style={styles.heroFloor} />
-      </View>
+      {/* Premium Generated Background */}
+      <Image 
+        source={require('../assets/images/hero_bw.png')} 
+        style={StyleSheet.absoluteFillObject}
+        resizeMode="cover"
+      />
 
       {/* Corner accent label */}
       <View style={styles.heroBadge}>
         <Text style={styles.heroBadgeText}>EST. 2024</Text>
       </View>
-    </View>
-  );
-}
-
-type LampProps = {
-  left: `${number}%`;
-  stemHeight: number;
-  pulseAnim: Animated.Value;
-};
-
-function PendantLamp({ left, stemHeight, pulseAnim }: LampProps) {
-  return (
-    <View style={[styles.lamp, { left }]}>
-      <View style={[styles.lampStem, { height: stemHeight }]} />
-      <View style={styles.lampCap} />
-      <View style={styles.lampShadeWrap}>
-        <View style={styles.lampShade} />
-      </View>
-      <Animated.View
-        style={[
-          styles.lightPool,
-          { opacity: pulseAnim },
-        ]}
-      />
     </View>
   );
 }
@@ -299,12 +243,12 @@ export default function WelcomeScreen() {
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/(auth)/login')}
-          android_ripple={{ color: 'rgba(255,255,255,0.1)', borderless: false }}
+          android_ripple={{ color: 'rgba(0,0,0,0.05)', borderless: false }}
           style={styles.primaryBtn}
         >
           <Text style={styles.primaryBtnText}>GET STARTED</Text>
           <View style={styles.primaryBtnArrow}>
-            <Ionicons name="arrow-forward" size={16} color="#1A1814" />
+            <Ionicons name="arrow-forward" size={16} color="#000000" />
           </View>
         </Pressable>
       </View>
@@ -317,7 +261,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F4F1EC',
+    backgroundColor: '#FFFFFF',
   },
 
   // Orbs
@@ -328,7 +272,7 @@ const styles = StyleSheet.create({
     width: 260,
     height: 260,
     borderRadius: 130,
-    backgroundColor: '#EAE5DC',
+    backgroundColor: '#F0F0F0',
     opacity: 0.7,
   },
   orbBottomLeft: {
@@ -338,7 +282,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: '#E8E2D8',
+    backgroundColor: '#F5F5F5',
     opacity: 0.5,
   },
 
@@ -355,7 +299,7 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   brand: {
-    color: '#1A1814',
+    color: '#000000',
     fontSize: 22,
     fontWeight: '900',
     letterSpacing: -0.8,
@@ -364,7 +308,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#BFA28C',
+    backgroundColor: '#000000',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 99,
@@ -373,10 +317,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#C8F0B0',
+    backgroundColor: '#FFFFFF',
   },
   topBarPillText: {
-    color: '#F4F1EC',
+    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.2,
@@ -390,154 +334,29 @@ const styles = StyleSheet.create({
     height: 220,
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#2B2925',
-    shadowColor: '#BFA28C',
-    shadowOpacity: 0.30,
+    backgroundColor: '#000000',
+    shadowColor: '#000000',
+    shadowOpacity: 0.15,
     shadowRadius: 28,
     shadowOffset: { width: 0, height: 14 },
     elevation: 12,
-  },
-  heroGlowOuter: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#FFF1D3',
-  },
-  heroRoom: {
-    position: 'absolute',
-    inset: 0,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  heroCeilingBand: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 14,
-    backgroundColor: '#BFA28C',
-  },
-  heroWall: {
-    position: 'absolute',
-    top: 14,
-    left: 0,
-    right: 0,
-    bottom: 60,
-    backgroundColor: '#9c866b',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroNiche: {
-    width: 120,
-    height: 80,
-    borderRadius: 8,
-    backgroundColor: '#28241F',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  heroNicheInner: {
-    width: 90,
-    height: 56,
-    borderRadius: 4,
-    backgroundColor: '#80623e',
-  },
-  heroFloorStrip: {
-    position: 'absolute',
-    bottom: 60,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgb(209, 172, 150)',
-  },
-  heroFloor: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 60,
-    backgroundColor: '#FFF1D3',
-  },
-  heroCounter: {
-    position: 'absolute',
-    bottom: 60,
-    left: 50,
-    right: 50,
-  },
-  heroCounterSurface: {
-    height: 8,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-    backgroundColor: '#947a55',
-  },
-  heroCounterBody: {
-    height: 22,
-    backgroundColor: '#b9a988',
-  },
-  heroCounterBase: {
-    alignSelf: 'center',
-    width: '85%',
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#2A2620',
   },
   heroBadge: {
     position: 'absolute',
     top: 20,
     right: 16,
-    backgroundColor: 'rgba(128, 38, 38, 0.08)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   heroBadgeText: {
-    color: 'rgba(255,255,255,0.45)',
+    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.8,
-  },
-
-  // Lamps
-  lamp: {
-    position: 'absolute',
-    top: 14,
-    alignItems: 'center',
-  },
-  lampStem: {
-    width: 1,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  lampCap: {
-    width: 8,
-    height: 3,
-    borderRadius: 1,
-    backgroundColor: '#5A5550',
-  },
-  lampShadeWrap: {
-    alignItems: 'center',
-  },
-  lampShade: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 9,
-    borderRightWidth: 9,
-    borderTopWidth: 16,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#d3ad66',
-  },
-  lightPool: {
-    width: 72,
-    height: 50,
-    borderRadius: 36,
-    backgroundColor: 'rgba(247, 173, 25, 0.51)',
-    marginTop: 2,
   },
 
   // Headline block
@@ -553,17 +372,17 @@ const styles = StyleSheet.create({
   eyebrowLine: {
     width: 24,
     height: 1.5,
-    backgroundColor: '#8C8070',
+    backgroundColor: '#000000',
     borderRadius: 1,
   },
   eyebrowText: {
-    color: '#8C8070',
+    color: '#000000',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 2,
   },
   headline: {
-    color: '#1A1814',
+    color: '#000000',
     fontSize: 50,
     lineHeight: 52,
     fontWeight: '900',
@@ -571,7 +390,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   subheadline: {
-    color: '#6B6560',
+    color: '#666666',
     fontSize: 15,
     lineHeight: 26,
     letterSpacing: -0.1,
@@ -588,10 +407,10 @@ const styles = StyleSheet.create({
   sectionDividerLine: {
     flex: 1,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(26,24,20,0.15)',
+    backgroundColor: 'rgba(0,0,0,0.15)',
   },
   sectionDividerLabel: {
-    color: '#9C9690',
+    color: '#999999',
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1.8,
@@ -601,10 +420,10 @@ const styles = StyleSheet.create({
   featureList: {
     marginTop: 4,
     borderRadius: 16,
-    backgroundColor: '#f3e5cc',
+    backgroundColor: '#F9F9F9',
     overflow: 'hidden',
-    shadowColor: '#C8C0B4',
-    shadowOpacity: 0.3,
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
     elevation: 4,
@@ -618,7 +437,7 @@ const styles = StyleSheet.create({
   },
   featureRowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(26,24,20,0.1)',
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   featureNumTag: {
     width: 28,
@@ -626,7 +445,7 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   featureNumText: {
-    color: '#B0A898',
+    color: '#999999',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -635,7 +454,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#BFA28C',
+    backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -645,13 +464,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   featureTitle: {
-    color: '#1A1814',
+    color: '#000000',
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: -0.3,
   },
   featureDesc: {
-    color: '#706860',
+    color: '#666666',
     fontSize: 13,
     lineHeight: 20,
   },
@@ -665,7 +484,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingTop: 16,
     paddingHorizontal: 24,
-    backgroundColor: '#F4F1EC',
+    backgroundColor: '#FFFFFF',
   },
   footerBorder: {
     position: 'absolute',
@@ -673,19 +492,19 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(26,24,20,0.1)',
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   primaryBtn: {
     height: 54,
     borderRadius: 999,
-    backgroundColor: '#1A1814',
+    backgroundColor: '#000000',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'stretch',
     gap: 10,
-    shadowColor: '#BFA28C',
-    shadowOpacity: 0.28,
+    shadowColor: '#000000',
+    shadowOpacity: 0.2,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
     elevation: 10,
@@ -695,7 +514,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.985 }],
   },
   primaryBtnText: {
-    color: '#F4F1EC',
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: 1,
@@ -704,7 +523,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#C8B890',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },

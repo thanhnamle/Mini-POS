@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import React, { useCallback, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -13,10 +14,67 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../ctx/AuthContext';
 import { supabase } from '../../lib/supabase';
 
-
 export default function SettingsScreen() {
   const router = useRouter();
   const { user, role, points, rank, phone } = useAuth();
+  const [defaultAddress, setDefaultAddress] = useState<string | null>(null);
+  const [defaultPayment, setDefaultPayment] = useState<string | null>(null);
+
+  // Fetch default data whenever screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchDefaultAddress();
+      fetchDefaultPayment();
+    }, [user?.id])
+  );
+
+  const fetchDefaultAddress = async () => {
+    try {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('addresses')
+        .select('street_number, ward, city')
+        .eq('user_id', user.id)
+        .eq('is_default', true)
+        .order('updated_at', { ascending: false })
+        .limit(1);
+
+      if (data && data.length > 0) {
+        setDefaultAddress(`${data[0].street_number}, ${data[0].ward}, ${data[0].city}`);
+      } else {
+        setDefaultAddress('Set your shipping address');
+      }
+    } catch (err: any) {
+      console.error('Fetch address error:', err.message);
+      setDefaultAddress('Set your shipping address');
+    }
+  };
+
+  const fetchDefaultPayment = async () => {
+    try {
+      if (!user?.id) return;
+
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('brand, last_4')
+        .eq('user_id', user.id)
+        .eq('is_default', true)
+        .maybeSingle();
+
+      if (data) {
+        setDefaultPayment(`${data.brand.toUpperCase()} •••• ${data.last_4}`);
+      } else {
+        setDefaultPayment('Add a payment method');
+      }
+    } catch (err) {
+      setDefaultPayment('Add a payment method');
+    }
+  };
+
+
+
+
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -44,7 +102,7 @@ export default function SettingsScreen() {
         <View style={styles.header}>
           <View style={{ width: 44 }} />
           <Text style={styles.headerTitle}>PROFILE</Text>
-          <Pressable style={styles.backBtn}>
+          <Pressable style={styles.backBtn} onPress={() => router.push('/(shop)/settings')}>
             <Ionicons name="settings-outline" size={24} color="#111111" />
           </Pressable>
         </View>
@@ -93,15 +151,31 @@ export default function SettingsScreen() {
               label="Personal Information" 
               onPress={() => router.push('/(shop)/profile_info')}
             />
-            <SettingsItem icon="location-outline" label="Shipping Addresses" />
-            <SettingsItem icon="card-outline" label="Payment Methods" />
+            <SettingsItem 
+              icon="location-outline" 
+              label="Shipping Addresses" 
+              subLabel={defaultAddress || 'Loading...'}
+              onPress={() => router.push('/(shop)/shipping_address')}
+            />
+            <SettingsItem 
+              icon="card-outline" 
+              label="Payment Methods" 
+              subLabel={defaultPayment || 'Loading...'}
+              onPress={() => router.push('/(shop)/payment_methods')}
+            />
+
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>ORDERS</Text>
-            <SettingsItem icon="receipt-outline" label="Order History" />
+            <SettingsItem 
+              icon="receipt-outline" 
+              label="Order History" 
+              onPress={() => router.push('/(shop)/order_history')}
+            />
             <SettingsItem icon="heart-outline" label="Wishlist" />
           </View>
+
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>SUPPORT</Text>
@@ -121,13 +195,16 @@ export default function SettingsScreen() {
   );
 }
 
-function SettingsItem({ icon, label, onPress }: { icon: any, label: string, onPress?: () => void }) {
+function SettingsItem({ icon, label, subLabel, onPress }: { icon: any, label: string, subLabel?: string, onPress?: () => void }) {
   return (
     <Pressable style={styles.settingsItem} onPress={onPress}>
       <View style={styles.settingsIconBox}>
         <Ionicons name={icon} size={20} color="#111111" />
       </View>
-      <Text style={styles.settingsLabel}>{label}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.settingsLabel}>{label}</Text>
+        {subLabel && <Text style={styles.settingsSubLabel} numberOfLines={1}>{subLabel}</Text>}
+      </View>
       <Ionicons name="chevron-forward" size={18} color="#D1D1D1" />
     </Pressable>
   );
@@ -308,4 +385,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FF4B4B',
   },
+  settingsSubLabel: {
+    fontSize: 12,
+    color: '#8C8478',
+    marginTop: 2,
+    fontWeight: '500',
+  },
 });
+
+
