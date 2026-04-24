@@ -131,7 +131,7 @@ function HeroScene() {
 
       {/* Corner accent label */}
       <View style={styles.heroBadge}>
-        <Text style={styles.heroBadgeText}>EST. 2024</Text>
+        <Text style={styles.heroBadgeText}>EST. 2026</Text>
       </View>
     </View>
   );

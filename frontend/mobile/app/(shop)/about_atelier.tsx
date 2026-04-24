@@ -66,7 +66,7 @@ export default function AboutAtelierScreen() {
             {/* Blockquote */}
             <View style={styles.blockquoteContainer}>
               <Text style={styles.blockquoteText}>
-                "We believe that structure should be felt, not seen. Depth is created through tonal layering, not arbitrary lines."
+                &quot;We believe that structure should be felt, not seen. Depth is created through tonal layering, not arbitrary lines.&quot;
               </Text>
             </View>
 

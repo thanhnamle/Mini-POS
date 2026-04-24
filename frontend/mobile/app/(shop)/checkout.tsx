@@ -155,7 +155,7 @@ export default function CheckoutScreen() {
               <View style={styles.emptyContainer}>
                 <Ionicons name="bag-outline" size={80} color="#EAE6DE" />
                 <Text style={styles.emptyTitle}>Your Bag is Waiting</Text>
-                <Text style={styles.emptySub}>Please review your items in the bag and confirm "Proceed to Order" to start checkout.</Text>
+                <Text style={styles.emptySub}>Please review your items in the bag and confirm &quot;Proceed to Order&quot; to start checkout.</Text>
                 <Pressable 
                   style={styles.exploreBtn}
                   onPress={() => router.replace('/(shop)/explore')}

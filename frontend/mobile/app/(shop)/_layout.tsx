@@ -32,10 +32,10 @@ export default function ShopLayout() {
         }}
       />
       <Tabs.Screen
-        name="wishlist"
+        name="orders"
         options={{
-          title: 'WISHLIST',
-          tabBarIcon: ({ color }) => <Ionicons name="heart-outline" size={22} color={color} />,
+          title: 'ORDERS',
+          tabBarIcon: ({ color }) => <Ionicons name="bag-outline" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -80,12 +80,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
         let iconName: any = 'compass-outline';
         if (route.name === 'explore') iconName = isFocused ? 'compass' : 'compass-outline';
-        else if (route.name === 'wishlist') iconName = isFocused ? 'heart' : 'heart-outline';
+        else if (route.name === 'orders'  ) iconName = isFocused ? 'bag' : 'bag-outline';
         else if (route.name === 'checkout') iconName = isFocused ? 'cart' : 'cart-outline';
         else if (route.name === 'settings') iconName = isFocused ? 'person' : 'person-outline';
 
         // ONLY RENDER THESE 4 TABS
-        const allowedTabs = ['explore', 'wishlist', 'checkout', 'settings'];
+        const allowedTabs = ['explore', 'orders', 'checkout', 'settings'];
         if (!allowedTabs.includes(route.name)) return null;
 
 
