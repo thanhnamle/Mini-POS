@@ -82,7 +82,7 @@ export default function SignUpScreen() {
             full_name: fullName,
             username: username,
             phone: fullPhoneNumber,
-            role: 'customer',
+            role: 'user',
           },
         },
       });
@@ -95,7 +95,7 @@ export default function SignUpScreen() {
           full_name: fullName,
           username: username,
           email: email,
-          role: 'customer',
+          role: 'user',
         });
 
         if (profileError) console.warn('Profile sync failed:', profileError.message);

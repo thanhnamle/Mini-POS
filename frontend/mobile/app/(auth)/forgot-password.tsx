@@ -4,7 +4,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,7 +15,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width } = Dimensions.get('window');
 const FORM_CARD_MARGIN = 20;
 const SWITCHER_PADDING = 30;
 
@@ -37,7 +35,7 @@ export default function ForgotPasswordScreen() {
       Animated.timing(contentFade, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.timing(contentSlide, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [contentFade, contentSlide]);
 
   const handleSendReset = () => {
     // Logic to send reset email would go here
