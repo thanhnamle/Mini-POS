@@ -88,7 +88,7 @@ export default function AdminLoginScreen() {
           .single();
 
         if (profile?.role === 'admin') {
-          router.replace('/(dashboard)');
+          router.replace('/(admin)');
         } else {
           setError('Access denied. Admin credentials required.');
           await supabase.auth.signOut();
@@ -206,7 +206,7 @@ export default function AdminLoginScreen() {
             </View>
 
             <Pressable 
-              onPress={() => router.push('/(admin)/index')}
+              onPress={() => router.back()}
               className="mt-12 items-center flex-row justify-center"
             >
               <Ionicons name="arrow-back" size={16} color="#94A3B8" className="mr-2" />

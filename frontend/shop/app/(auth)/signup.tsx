@@ -230,7 +230,7 @@ export default function AdminSignUpScreen() {
             </Text>
             
             <Text className="text-slate-500 text-center font-bold leading-6 mb-10">
-              Your Atelier Admin account has been initialized. You can now access your workspace.
+              Please submit your email before access to workspace.
             </Text>
 
             <Pressable 

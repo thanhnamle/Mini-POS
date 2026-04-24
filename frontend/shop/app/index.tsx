@@ -102,12 +102,6 @@ export default function WelcomeScreen() {
           >
             <Text className="text-white text-base font-bold">Enter Admin Suite</Text>
           </Pressable>
-          
-          <Pressable 
-            className="h-[64px] bg-slate-50 rounded-[32px] items-center justify-center active:opacity-70 border border-slate-100"
-          >
-            <Text className="text-slate-900 text-base font-bold">Explore Features</Text>
-          </Pressable>
         </View>
 
         {/* Status Card Image Area */}
@@ -132,7 +126,7 @@ export default function WelcomeScreen() {
                   All Modules Operational
                 </Text>
               </View>
-              <View className="w-3 h-3 bg-slate-900 rounded-full" />
+              <View className="w-3 h-3 bg-slate-900 rounded-full bg-green-500" />
             </View>
           </View>
         </View>
