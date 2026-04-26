@@ -137,7 +137,7 @@ export default function AdminDashboard() {
           </View>
 
           {/* Transaction Items */}
-          <View className="bg-slate-50 rounded-[32px] p-4">
+          <View className="bg-slate-50 rounded-[32px] p-4 mb-20">
             <TransactionItem id="#8842" items={2} time="10:42 AM" amount="142.00" />
             <View className="h-[1px] bg-slate-100 mx-4" />
             <TransactionItem id="#8841" items={1} time="10:15 AM" amount="45.00" />

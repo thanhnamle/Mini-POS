@@ -31,7 +31,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Catalog',
+          title: 'DASHBOARD',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "grid" : "grid-outline"} size={22} color={color} />
           ),
@@ -40,7 +40,16 @@ export default function TabLayout() {
       <Tabs.Screen
         name="sales"
         options={{
-          title: 'Sales',
+          title: 'SALES',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "megaphone" : "megaphone-outline"} size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="orders"
+        options={{
+          title: 'ORDERS',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "receipt" : "receipt-outline"} size={22} color={color} />
           ),
@@ -49,16 +58,16 @@ export default function TabLayout() {
       <Tabs.Screen
         name="products"
         options={{
-          title: 'Products',
+          title: 'STOCK',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "cube" : "cube-outline"} size={22} color={color} />
+            <Ionicons name={focused ? "archive" : "archive-outline"} size={22} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: 'SETTINGS',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "settings" : "settings-outline"} size={22} color={color} />
           ),
@@ -91,13 +100,14 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         };
 
         let iconName: any = 'compass-outline';
-        if (route.name === 'catalog') iconName = isFocused ? 'grid' : 'grid-outline';
-        else if (route.name === 'sales') iconName = isFocused ? 'receipt' : 'receipt-outline';
-        else if (route.name === 'products') iconName = isFocused ? 'cube' : 'cube-outline';
+        if (route.name === 'index') iconName = isFocused ? 'grid' : 'grid-outline';
+        else if (route.name === 'sales') iconName = isFocused ? 'megaphone' : 'megaphone-outline';
+        else if (route.name === 'orders') iconName = isFocused ? 'receipt' : 'receipt-outline';
+        else if (route.name === 'products') iconName = isFocused ? 'archive' : 'archive-outline';
         else if (route.name === 'settings') iconName = isFocused ? 'settings' : 'settings-outline';
 
-        // ONLY RENDER THESE 4 TABS
-        const allowedTabs = ['catalog', 'sales', 'products', 'settings'];
+        // ONLY RENDER THESE 5 TABS
+        const allowedTabs = ['index', 'sales', 'orders', 'products', 'settings'];
         if (!allowedTabs.includes(route.name)) return null;
 
         return (
