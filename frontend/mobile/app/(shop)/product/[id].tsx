@@ -304,17 +304,27 @@ export default function ProductDetailScreen() {
       {/* Sticky Bottom Action */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) + 70 }]}>
         <View style={styles.buttonGroup}>
-          <Pressable style={styles.secondaryBtn} onPress={handleAddToBag}>
+          <Pressable 
+            style={[styles.secondaryBtn, product.stock <= 0 && { opacity: 0.5 }]} 
+            onPress={handleAddToBag}
+            disabled={product.stock <= 0}
+          >
             <Ionicons name="bag-add-outline" size={24} color="#1A1814" />
           </Pressable>
           
           <Pressable 
-            style={styles.primaryBtn} 
+            style={[
+              styles.primaryBtn, 
+              product.stock <= 0 && { backgroundColor: '#E0E0E0' }
+            ]} 
             onPress={handleBuyNow}
+            disabled={product.stock <= 0}
           >
-            <Text style={styles.primaryBtnText}>BUY NOW</Text>
-            <View style={styles.btnIcon}>
-              <Ionicons name="flash" size={18} color="#1A1814" />
+            <Text style={[styles.primaryBtnText, product.stock <= 0 && { color: '#9E9E9E' }]}>
+              {product.stock <= 0 ? 'OUT OF STOCK' : 'BUY NOW'}
+            </Text>
+            <View style={[styles.btnIcon, product.stock <= 0 && { backgroundColor: '#BDBDBD' }]}>
+              <Ionicons name={product.stock <= 0 ? "close-circle" : "flash"} size={18} color="#1A1814" />
             </View>
           </Pressable>
         </View>

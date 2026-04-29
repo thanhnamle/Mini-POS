@@ -57,15 +57,16 @@ exports.handler = async (event) => {
         // 3. Insert Order Items & Update Stock
         for (const item of items) {
             const itemQuery = `
-                INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal)
-                VALUES ($1, $2, $3, $4, $5);
+                INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal, selected_size)
+                VALUES ($1, $2, $3, $4, $5, $6);
             `;
             await client.query(itemQuery, [
                 order.id,
                 item.id || item.product_id,
                 item.quantity || 1,
                 item.price,
-                item.price * (item.quantity || 1)
+                item.price * (item.quantity || 1),
+                item.selectedSize || item.selected_size || 'N/A'
             ]);
 
             // Update product stock
