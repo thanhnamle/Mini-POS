@@ -131,7 +131,6 @@ export default function ShippingAddressScreen() {
     const payload = {
       ...address,
       user_id: userId,
-      updated_at: new Date().toISOString()
     };
 
     // Sử dụng upsert để tự động INSERT hoặc UPDATE dựa trên user_id và label

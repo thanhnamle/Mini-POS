@@ -7,7 +7,6 @@ import {
   Image,
   StyleSheet,
   TextInput,
-  Dimensions,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
@@ -16,7 +15,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Search, SlidersHorizontal, Clock, Wallet, Banknote } from 'lucide-react-native';
 
-const { width } = Dimensions.get('window');
 const API_URL = 'https://767blee8h7.execute-api.ap-southeast-2.amazonaws.com/prod';
 
 type OrderStatus = 'Pending' | 'Completed' | 'Cancelled';

@@ -4,7 +4,6 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -12,11 +11,10 @@ import {
   Text,
   TextInput,
   View,
-  Platform,
 } from 'react-native';
 
 
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 
 type PaymentMethod = {
@@ -400,7 +398,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     height: 56,
-    paddingTop: 35,
+    paddingTop: 5,
+    marginTop: 50,
   },
   headerBtn: {
     width: 40,

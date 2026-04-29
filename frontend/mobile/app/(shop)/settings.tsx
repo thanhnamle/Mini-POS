@@ -29,7 +29,7 @@ export default function SettingsScreen() {
         .select('street_number, ward, city')
         .eq('user_id', user.id)
         .eq('is_default', true)
-        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1);
 
       if (data && data.length > 0) {

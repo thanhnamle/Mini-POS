@@ -72,7 +72,7 @@ export default function SettingsScreen() {
             <View className="flex-row items-center">
               <View className="w-2 h-2 rounded-full bg-emerald-500 mr-2" />
               <Text className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">
-                Admin Active • {user?.user_metadata?.full_name?.split(' ')[0] || 'Administrator'}
+                Admin Active • {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Administrator'}
               </Text>
             </View>
           </View>
@@ -124,13 +124,13 @@ export default function SettingsScreen() {
             <SettingsItem 
               icon={<Users size={20} color="#111111" />} 
               label="Personal Information" 
-              subLabel={`${user?.email || 'admin@atelier.com'} • ${formatPhone(user?.user_metadata?.phone)}`}
+              subLabel={`${user?.user_metadata?.full_name || 'Set your name'} • ${user?.email}`}
               onPress={() => router.push('/(admin)/profile_info')}
             />
             <SettingsItem 
               icon={<Lock size={20} color="#111111" />} 
               label="Security & Password" 
-              subLabel="Last updated 2 days ago"
+              subLabel="Manage your account security"
               onPress={() => router.push('/(admin)/security')}
             />
           </SettingsGroup>

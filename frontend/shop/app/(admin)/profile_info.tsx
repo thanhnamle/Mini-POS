@@ -51,7 +51,7 @@ export default function PersonalInformationScreen() {
         setUser(authUser);
         setEmail(authUser.email || '');
 
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('profiles')
           .select('full_name, username, phone, role')
           .eq('id', authUser.id)
@@ -153,7 +153,7 @@ export default function PersonalInformationScreen() {
       const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
       const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, decode(base64), {
           contentType: `image/${fileExt}`,
@@ -267,6 +267,7 @@ export default function PersonalInformationScreen() {
                       onChangeText={setFullName}
                       placeholder="Enter your full name"
                     />
+                    <Text style={{ fontSize: 10, color: '#8C8478', marginLeft: 4 }}>Used for invoices and orders</Text>
                   </View>
 
                   <View style={styles.inputGroup}>
@@ -278,6 +279,7 @@ export default function PersonalInformationScreen() {
                       placeholder="username"
                       autoCapitalize="none"
                     />
+                    <Text style={{ fontSize: 10, color: '#8C8478', marginLeft: 4 }}>Unique identifier for your admin account</Text>
                   </View>
 
                   <View style={styles.inputGroup}>
@@ -296,11 +298,10 @@ export default function PersonalInformationScreen() {
                       <PhoneInput
                         ref={phoneInputRef}
                         defaultCode="VN"
-                        value={phone}
+                        value={phone.replace('+84', '').trim()} // Remove prefix for display
                         layout="first"
                         onChangeText={(text) => {
-                          const formatted = formatPhoneNumber(text);
-                          setPhone(formatted);
+                          setPhone(text);
                         }}
                         onChangeFormattedText={(text) => setFormattedPhone(text)}
                         containerStyle={styles.pickerContainer}
@@ -315,15 +316,12 @@ export default function PersonalInformationScreen() {
                           onFocus: () => setFocusedField('phone'),
                           onBlur: () => setFocusedField(null),
                           maxLength: 15,
-                          value: phone,
-                        }}
-                        countryPickerProps={{
-                          withAlphaFilter: true,
-                          withCallingCode: true,
-                          withEmoji: true,
                         }}
                       />
                     </View>
+                    <Text style={{ fontSize: 10, color: '#8C8478', marginTop: 4, marginLeft: 4 }}>
+                      Format: (+84) 0xxx xxx xxx
+                    </Text>
                   </View>
                 </View>
 
