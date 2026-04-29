@@ -44,7 +44,6 @@ export default function OrderHistoryScreen() {
   const [filter, setFilter] = useState('all');
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
-  // Tự động làm mới dữ liệu mỗi khi người dùng vào trang này
   useFocusEffect(
     useCallback(() => {
       fetchOrders();
@@ -80,7 +79,6 @@ export default function OrderHistoryScreen() {
     }
   };
 
-  // Áp dụng bộ lọc thực tế vào danh sách
   const filteredOrders = orders.filter(order => {
     const orderDate = parseISO(order.created_at);
     const now = new Date();
@@ -182,7 +180,6 @@ export default function OrderHistoryScreen() {
       </Pressable>
     );
   };
-
 
   return (
     <View style={styles.container}>

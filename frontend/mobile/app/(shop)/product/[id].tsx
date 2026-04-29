@@ -25,7 +25,7 @@ type Product = {
   category_id: number;
   image_url: string;
   stock: number;
-  // UI fields
+  
   surface: string;
   accent: string;
   icon: any;
@@ -117,11 +117,9 @@ export default function ProductDetailScreen() {
   useEffect(() => {
     fetchProduct();
     checkWishlist();
-  }, [fetchProduct, checkWishlist]);
-
-
-
-
+    setSelectedSize('M');
+    setQuantity(1);
+  }, [id, fetchProduct, checkWishlist]);
 
   const handleAddToBag = () => {
     if (!product) return;
@@ -137,10 +135,7 @@ export default function ProductDetailScreen() {
       accent: product.accent,
       iconColor: product.iconColor,
     };
-    // Add multiple times based on quantity
-    for(let i=0; i<quantity; i++) {
-      addToCart(cartItem as any, selectedSize);
-    }
+    addToCart(cartItem as any, selectedSize, quantity);
     setShowCartSuccess(true);
   };
   
@@ -166,8 +161,6 @@ export default function ProductDetailScreen() {
 
   const incrementQty = () => setQuantity(prev => prev + 1);
   const decrementQty = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
-
-
 
   if (loading) {
     return (
@@ -362,8 +355,6 @@ export default function ProductDetailScreen() {
     </View>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   screen: {

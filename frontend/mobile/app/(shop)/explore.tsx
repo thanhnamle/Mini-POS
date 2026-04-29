@@ -100,7 +100,6 @@ export default function ShopHomeScreen() {
     return matchesCategory && matchesSearch;
   });
 
-
   return (
     <View style={styles.screen}>
       <StatusBar style="dark" />
@@ -212,8 +211,6 @@ export default function ShopHomeScreen() {
   );
 }
 
-
-
 function ProductArtwork({ product }: { product: Product }) {
   const isDark = product.surface === '#1A1A1A' || product.surface === '#0F0F0F';
 
@@ -316,13 +313,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     paddingVertical: 8,
   },
-  // iconButton: {
-  //   position: 'relative',
-  //   width: 36,
-  //   height: 36,
-  //   alignItems: 'center',
-  //   justifyContent: 'center',
-  // },
   cartWrap: {
     position: 'relative',
   },

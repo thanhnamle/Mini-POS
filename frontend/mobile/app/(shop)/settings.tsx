@@ -177,13 +177,13 @@ export default function SettingsScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>ORDERS</Text>
             <SettingsItem 
-              icon="heart-outline" 
-              label="Saved Items" 
+              icon="heart-outline"
+              label="Saved Items"
               onPress={() => router.push('/(shop)/wishlist')}
             />
             <SettingsItem 
-              icon="receipt-outline" 
-              label="Order History" 
+              icon="receipt-outline"
+              label="Order History"
               onPress={() => router.push('/(shop)/order_history')}
             />
 
@@ -192,7 +192,7 @@ export default function SettingsScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>SUPPORT</Text>
-            <SettingsItem 
+            <SettingsItem
               icon="help-circle-outline" 
               label="Help Center" 
               onPress={() => router.push('/(shop)/help_center')}
@@ -222,7 +222,7 @@ function SettingsItem({ icon, label, subLabel, onPress }: { icon: any, label: st
       <View style={styles.settingsIconBox}>
         <Ionicons name={icon} size={20} color="#111111" />
       </View>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
         <Text style={styles.settingsLabel}>{label}</Text>
         {subLabel && <Text style={styles.settingsSubLabel} numberOfLines={1}>{subLabel}</Text>}
       </View>
@@ -385,7 +385,6 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   settingsLabel: {
-    flex: 1,
     fontSize: 15,
     fontWeight: '600',
     color: '#111111',

@@ -110,7 +110,6 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   );
 }
 
-
 const styles = StyleSheet.create({
   bottomBar: {
     position: 'absolute',

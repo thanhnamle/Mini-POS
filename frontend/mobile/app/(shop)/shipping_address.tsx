@@ -17,7 +17,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 
-// Định nghĩa kiểu dữ liệu cho Address phù hợp với DB mới
 type AddressData = {
   id?: string;
   first_name: string;
@@ -133,7 +132,6 @@ export default function ShippingAddressScreen() {
       user_id: userId,
     };
 
-    // Sử dụng upsert để tự động INSERT hoặc UPDATE dựa trên user_id và label
     const { error } = await supabase
       .from('addresses')
       .upsert(payload, { 
@@ -147,8 +145,6 @@ export default function ShippingAddressScreen() {
     }
   };
 
-
-
   const updateField = (type: 'primary' | 'secondary', field: keyof AddressData, value: string) => {
     if (type === 'primary') {
       setPrimary(prev => ({ ...prev, [field]: value }));
@@ -156,7 +152,6 @@ export default function ShippingAddressScreen() {
       setSecondary(prev => ({ ...prev, [field]: value }));
     }
   };
-
 
   const renderInput = (
     label: string, 
@@ -390,8 +385,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 15,
   },
-
-
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',

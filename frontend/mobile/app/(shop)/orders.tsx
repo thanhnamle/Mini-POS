@@ -40,10 +40,9 @@ export default function OrdersScreen() {
   const insets = useSafeAreaInsets();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'pending', 'shipping', 'delivered'
+  const [statusFilter, setStatusFilter] = useState('all');
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
-  // Tự động làm mới dữ liệu mỗi khi người dùng vào trang này
   useFocusEffect(
     useCallback(() => {
       fetchOrders();

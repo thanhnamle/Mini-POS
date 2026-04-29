@@ -11,6 +11,8 @@ import {
   Text,
   TextInput,
   View,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 
 
@@ -206,80 +208,87 @@ export default function PaymentMethodsScreen() {
 
       {/* --- Add Card Modal --- */}
       <Modal visible={showAddModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.addCardContent}>
-            <View style={styles.addCardHeader}>
-              <Text style={styles.addCardTitle}>Add Credit Card</Text>
-              <Pressable onPress={() => setShowAddModal(false)}>
-                <Ionicons name="close" size={24} color="#1A1814" />
-              </Pressable>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.modalOverlay}>
+            <Pressable style={styles.modalDismiss} onPress={() => setShowAddModal(false)} />
+            <View style={styles.addCardContent}>
+              <View style={styles.addCardHeader}>
+                <Text style={styles.addCardTitle}>Add Credit Card</Text>
+                <Pressable onPress={() => setShowAddModal(false)}>
+                  <Ionicons name="close" size={24} color="#1A1814" />
+                </Pressable>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>CARD HOLDER NAME</Text>
+                  <TextInput 
+                    style={styles.input} 
+                    placeholder="J. DOE" 
+                    value={holderName}
+                    onChangeText={setHolderName}
+                    autoCapitalize="characters"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>CARD NUMBER</Text>
+                  <TextInput 
+                    style={styles.input} 
+                    placeholder="•••• •••• •••• ••••" 
+                    keyboardType="numeric"
+                    maxLength={19}
+                    value={formatCardNumber(cardNumber)}
+                    onChangeText={(t) => setCardNumber(t.replace(/\s/g, ''))}
+                  />
+                </View>
+
+                <View style={styles.row}>
+                  <View style={[styles.inputGroup, { flex: 1 }]}>
+                    <Text style={styles.inputLabel}>EXPIRY</Text>
+                    <TextInput 
+                      style={styles.input} 
+                      placeholder="MM/YY" 
+                      keyboardType="numeric"
+                      maxLength={5}
+                      value={formatExpiry(expiry)}
+                      onChangeText={setExpiry}
+                    />
+                  </View>
+                  <View style={{ width: 16 }} />
+                  <View style={[styles.inputGroup, { flex: 1 }]}>
+                    <Text style={styles.inputLabel}>CVV</Text>
+                    <TextInput 
+                      style={styles.input} 
+                      placeholder="•••" 
+                      keyboardType="numeric"
+                      maxLength={3}
+                      secureTextEntry
+                      value={cvv}
+                      onChangeText={setCvv}
+                    />
+                  </View>
+                </View>
+
+                <Pressable 
+                  style={[styles.saveBtn, saving && { opacity: 0.7 }]} 
+                  onPress={handleAddCard}
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <ActivityIndicator color="#FFF" />
+                  ) : (
+                    <Text style={styles.saveBtnText}>Save Card</Text>
+                  )}
+                </Pressable>
+                <View style={{ height: 40 }} />
+              </ScrollView>
             </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>CARD HOLDER NAME</Text>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="J. DOE" 
-                  value={holderName}
-                  onChangeText={setHolderName}
-                  autoCapitalize="characters"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>CARD NUMBER</Text>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="•••• •••• •••• ••••" 
-                  keyboardType="numeric"
-                  maxLength={19}
-                  value={formatCardNumber(cardNumber)}
-                  onChangeText={(t) => setCardNumber(t.replace(/\s/g, ''))}
-                />
-              </View>
-
-              <View style={styles.row}>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>EXPIRY</Text>
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="MM/YY" 
-                    keyboardType="numeric"
-                    maxLength={5}
-                    value={formatExpiry(expiry)}
-                    onChangeText={setExpiry}
-                  />
-                </View>
-                <View style={{ width: 16 }} />
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>CVV</Text>
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="•••" 
-                    keyboardType="numeric"
-                    maxLength={3}
-                    secureTextEntry
-                    value={cvv}
-                    onChangeText={setCvv}
-                  />
-                </View>
-              </View>
-
-              <Pressable 
-                style={[styles.saveBtn, saving && { opacity: 0.7 }]} 
-                onPress={handleAddCard}
-                disabled={saving}
-              >
-                {saving ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <Text style={styles.saveBtnText}>Save Card</Text>
-                )}
-              </Pressable>
-            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* --- Success Modal --- */}
@@ -628,6 +637,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     maxHeight: '90%',
+  },
+  modalDismiss: {
+    ...StyleSheet.absoluteFillObject,
   },
   addCardHeader: {
     flexDirection: 'row',

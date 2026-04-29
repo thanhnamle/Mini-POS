@@ -40,7 +40,6 @@ export default function PersonalInformationScreen() {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const phoneInputRef = useRef<PhoneInput | null>(null);
 
-
   // 1. Fetch current profile data
   useEffect(() => {
     async function loadProfile() {
@@ -85,7 +84,6 @@ export default function PersonalInformationScreen() {
 
     loadProfile();
   }, [user]);
-
 
   // 2. Update profile data
   const handleSaveDetails = async () => {
@@ -135,7 +133,6 @@ export default function PersonalInformationScreen() {
     } finally {
       setLoading(false);
     }
-
   };
 
   const pickImage = async () => {
@@ -211,8 +208,6 @@ export default function PersonalInformationScreen() {
     }
   };
 
-
-
   const formatPhoneNumber = (text: string) => {
     const cleaned = text.replace(/\D/g, '');
     
@@ -225,7 +220,6 @@ export default function PersonalInformationScreen() {
     }
     return formatted.trim();
   };
-
 
   return (
     <View style={styles.screen}>
@@ -347,7 +341,6 @@ export default function PersonalInformationScreen() {
                           maxLength: 15,
                           value: phone,
                         }}
-
 
                         countryPickerProps={{
                           withAlphaFilter: true,

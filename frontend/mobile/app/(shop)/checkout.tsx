@@ -24,14 +24,13 @@ export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
   const { user, refreshProfile } = useAuth();
 
-  const { cart, clearCart, removeFromCart, isCheckoutActive, setCheckoutActive } = useCart();
+  const { cart, clearCart, removeFromCart, isCheckoutActive } = useCart();
   
   const [successVisible, setSuccessVisible] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('Credit Card');
   const [earnedPoints, setEarnedPoints] = useState(0);
 
-  // Tính toán trực tiếp checkoutItems thay vì dùng state + useEffect
   const checkoutItems = params.buyNowId 
     ? [{
         id: params.buyNowId,
@@ -96,8 +95,6 @@ export default function CheckoutScreen() {
         throw new Error(errorMsg);
       }
 
-
-
       // Update local state with earned points from backend
       setEarnedPoints(result.earned_points || 0);
 
@@ -116,8 +113,6 @@ export default function CheckoutScreen() {
       setProcessing(false);
     }
   };
-
-
 
   const handleViewHistory = () => {
     setSuccessVisible(false);
@@ -283,8 +278,6 @@ export default function CheckoutScreen() {
     </View>
   );
 }
-
-
 
 function OrderItem({ name, sku, price, qty, surface, icon, iconColor, onDelete }: any) {
   return (

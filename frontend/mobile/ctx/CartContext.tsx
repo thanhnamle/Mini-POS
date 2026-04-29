@@ -11,7 +11,7 @@ export interface CartItem extends Product {
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (product: any, size: string) => void;
+  addToCart: (product: any, size: string, quantity?: number) => void;
   removeFromCart: (productId: string, size: string) => void;
   clearCart: () => void;
   totalAmount: number;
@@ -51,7 +51,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ...item.products,
         quantity: item.quantity,
         selectedSize: item.selected_size,
-        // Ensure UI fields are present if missing from products table
         surface: item.products.surface || '#F6F6F4',
         accent: item.products.accent || '#EAE6DE',
         icon: item.products.icon || 'shirt-outline',
@@ -65,47 +64,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
     loadCartFromDB();
   }, [loadCartFromDB]);
 
-  const addToCart = async (product: any, size: string) => {
+  const addToCart = async (product: any, size: string, quantity: number = 1) => {
     if (!user) {
       // Fallback to local state if not logged in (optional)
       setCart(prev => {
         const existing = prev.find(i => i.id === product.id && i.selectedSize === size);
-        if (existing) return prev.map(i => i.id === product.id && i.selectedSize === size ? { ...i, quantity: i.quantity + 1 } : i);
-        return [...prev, { ...product, quantity: 1, selectedSize: size }];
+        if (existing) return prev.map(i => i.id === product.id && i.selectedSize === size ? { ...i, quantity: i.quantity + quantity } : i);
+        return [...prev, { ...product, quantity: quantity, selectedSize: size }];
       });
       return;
     }
-
+ 
     try {
-      const { data: existing, error: fetchError } = await supabase
-        .from('cart_items')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('product_id', product.id)
-        .eq('selected_size', size)
-        .maybeSingle();
+      const { error } = await supabase.rpc('add_to_cart_v2', {
+        p_user_id: user.id,
+        p_product_id: product.id,
+        p_size: size,
+        p_quantity: quantity
+      });
 
-      if (fetchError) throw fetchError;
-
-      if (existing) {
-        const { error: updateError } = await supabase
-          .from('cart_items')
-          .update({ quantity: existing.quantity + 1 })
-          .eq('id', existing.id);
-        if (updateError) throw updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from('cart_items')
-          .insert({
-            user_id: user.id,
-            product_id: product.id,
-            quantity: 1,
-            selected_size: size
-          });
-        if (insertError) throw insertError;
-      }
+      if (error) throw error;
       
-      // Update local state immediately for better UX
       await loadCartFromDB();
       
     } catch (err: any) {

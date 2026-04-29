@@ -16,7 +16,6 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -28,23 +27,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
+  const calculateRank = (pts: number) => {
+    if (pts < 500) return 'Bronze';
+    if (pts < 1500) return 'Silver';
+    if (pts < 3000) return 'Gold';
+    if (pts < 6000) return 'Platinum';
+    return 'Diamond';
+  };
+
   const fetchProfile = async (userId: string, currentUser?: User | null) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('role, loyalty_points, rank, phone')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
-        console.warn('Profile fetch failed, using fallback');
+      if (error) throw error;
+
+      if (data) {
+        setRole(data.role as Role);
+        const pts = data.loyalty_points || 0;
+        setPoints(pts);
+        setPhone(data.phone || '');
+        
+        // Ưu tiên tính hạng theo điểm để đảm bảo tính cập nhật
+        setRank(calculateRank(pts));
+      } else {
         const metadataRole = currentUser?.user_metadata?.role as Role;
         setRole(metadataRole || 'customer');
-      } else if (data) {
-        setRole(data.role as Role);
-        setPoints(data.loyalty_points || 0);
-        setRank(data.rank || 'Bronze');
-        setPhone(data.phone || '');
       }
 
     } catch (err) {
@@ -52,7 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setRole(null);
     }
   };
-
 
   useEffect(() => {
     // Initial session check
@@ -78,7 +88,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     );
-
 
     return () => {
       subscription.unsubscribe();

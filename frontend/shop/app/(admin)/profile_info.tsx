@@ -190,15 +190,15 @@ export default function PersonalInformationScreen() {
     }
   };
 
-  const formatPhoneNumber = (text: string) => {
-    const cleaned = text.replace(/\D/g, '');
-    let formatted = '';
-    for (let i = 0; i < cleaned.length; i++) {
-      if (i === 4 || i === 7) formatted += ' ';
-      formatted += cleaned[i];
-    }
-    return formatted.trim();
-  };
+  // const formatPhoneNumber = (text: string) => {
+  //   const cleaned = text.replace(/\D/g, '');
+  //   let formatted = '';
+  //   for (let i = 0; i < cleaned.length; i++) {
+  //     if (i === 4 || i === 7) formatted += ' ';
+  //     formatted += cleaned[i];
+  //   }
+  //   return formatted.trim();
+  // };
 
   return (
     <View style={styles.screen}>
