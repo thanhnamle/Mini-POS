@@ -15,12 +15,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
-// import { useAuth } from '../../ctx/AuthContext';
 
 const FORM_CARD_MARGIN = 20;
 const SWITCHER_PADDING = 24;
-
-type Role = 'customer' | 'admin';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -107,24 +104,7 @@ export default function LoginScreen() {
       }
 
       if (data.user) {
-        // Fetch profile to get role
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profileError || !profile) {
-          console.warn('Profile fetch failed, using default (shop)');
-          router.replace('/(shop)/explore');
-        } else if (profile) {
-          const userRole = profile.role as Role;
-          if (userRole === 'admin') {
-            router.replace('/(admin)');
-          } else {
-            router.replace('/(shop)/explore');
-          }
-        }
+        router.replace('/(shop)/explore');
       }
     } catch (err) {
       console.error('Unexpected error during sign in:', err);
@@ -169,8 +149,8 @@ export default function LoginScreen() {
                   <View style={[s.decoLine, {width: '10%', marginTop: 6}]} />
               </View>
 
-              <Text style={s.panelHeadline}>ATELIER  POS</Text>
-              <Text style={s.panelSub}>Sign in to your workspace</Text>
+              <Text style={s.panelHeadline}>ATELIER SHOP</Text>
+              <Text style={s.panelSub}>Enjoy Your Shopping</Text>
             </View>
 
             {/* ── FORM CARD ── */}

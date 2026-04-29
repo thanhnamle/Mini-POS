@@ -38,6 +38,7 @@ export default function ProductsScreen() {
   const [stock, setStock] = useState('');
   const [sku, setSku] = useState('');
   const [description, setDescription] = useState('');
+  const [editingProduct, setEditingProduct] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const filters: FilterStatus[] = ['ALL ITEMS', 'IN STOCK', 'OUT OF STOCK'];
@@ -66,7 +67,23 @@ export default function ProductsScreen() {
     fetchProducts();
   };
 
-  const handleAddProduct = async () => {
+  const openEditModal = (product: any) => {
+    setEditingProduct(product);
+    setName(product.name);
+    setPrice(product.price.toString());
+    setStock(product.stock.toString());
+    setSku(product.sku || '');
+    setDescription(product.description || '');
+    setModalVisible(true);
+  };
+
+  const openAddModal = () => {
+    setEditingProduct(null);
+    resetForm();
+    setModalVisible(true);
+  };
+
+  const handleSaveProduct = async () => {
     if (!name || !price || !stock) {
       Alert.alert('Missing Info', 'Please fill in Name, Price and Stock.');
       return;
@@ -74,8 +91,12 @@ export default function ProductsScreen() {
 
     try {
       setSubmitting(true);
-      const response = await fetch(`${API_URL}/products`, {
-        method: 'POST',
+      const isEditing = !!editingProduct;
+      const url = isEditing ? `${API_URL}/products/${editingProduct.id}` : `${API_URL}/products`;
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
@@ -83,18 +104,18 @@ export default function ProductsScreen() {
           stock: parseInt(stock),
           sku,
           description,
-          image_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80' // Default dummy image
+          image_url: editingProduct?.image_url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80'
         }),
       });
 
       if (response.ok) {
         setModalVisible(false);
         resetForm();
-        fetchProducts(); // Refresh list
-        Alert.alert('Success', 'Product added successfully!');
+        fetchProducts(); 
+        Alert.alert('Success', `Product ${isEditing ? 'updated' : 'added'} successfully!`);
       } else {
         const err = await response.json();
-        throw new Error(err.error || 'Failed to add product');
+        throw new Error(err.error || `Failed to ${isEditing ? 'update' : 'add'} product`);
       }
     } catch (error: any) {
       Alert.alert('Error', error.message);
@@ -103,17 +124,47 @@ export default function ProductsScreen() {
     }
   };
 
+  const handleDeleteProduct = (productId: string) => {
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to delete this product? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(`${API_URL}/products/${productId}`, {
+                method: 'DELETE',
+              });
+              if (response.ok) {
+                fetchProducts();
+                Alert.alert('Success', 'Product deleted successfully');
+              } else {
+                throw new Error('Failed to delete product');
+              }
+            } catch (error: any) {
+              Alert.alert('Error', error.message);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const resetForm = () => {
     setName('');
     setPrice('');
     setStock('');
     setSku('');
     setDescription('');
+    setEditingProduct(null);
   };
 
   const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          p.sku?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (p.sku || '').toLowerCase().includes(searchQuery.toLowerCase());
     const isOutOfStock = (p.stock || 0) <= 0;
     
     if (activeFilter === 'IN STOCK') return matchesSearch && !isOutOfStock;
@@ -159,7 +210,7 @@ export default function ProductsScreen() {
         {/* --- ADD PRODUCT BUTTON --- */}
         <View className="px-6 mb-10">
           <Pressable 
-            onPress={() => setModalVisible(true)}
+            onPress={openAddModal}
             className="bg-black h-12 px-6 rounded-full self-start flex-row items-center active:opacity-90"
           >
             <Plus color="white" size={16} strokeWidth={3} />
@@ -203,7 +254,12 @@ export default function ProductsScreen() {
             <ActivityIndicator size="large" color="#000" />
           ) : filteredProducts.length > 0 ? (
             filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                onEdit={() => openEditModal(product)}
+                onDelete={() => handleDeleteProduct(product.id)}
+              />
             ))
           ) : (
             <Text className="text-center py-20 text-slate-400 font-bold">No products found</Text>
@@ -218,7 +274,7 @@ export default function ProductsScreen() {
         </View>
       </ScrollView>
 
-      {/* --- ADD PRODUCT MODAL --- */}
+      {/* --- PRODUCT MODAL (ADD/EDIT) --- */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -232,7 +288,9 @@ export default function ProductsScreen() {
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               <View className="flex-row justify-between items-center mb-6">
-                <Text className="text-2xl font-[900] text-slate-900">Add Product</Text>
+                <Text className="text-2xl font-[900] text-slate-900">
+                  {editingProduct ? 'Edit Product' : 'Add Product'}
+                </Text>
                 <Pressable onPress={() => setModalVisible(false)} className="p-2 bg-slate-100 rounded-full">
                   <X color="black" size={20} />
                 </Pressable>
@@ -297,14 +355,16 @@ export default function ProductsScreen() {
                 </View>
 
                 <Pressable 
-                  onPress={handleAddProduct}
+                  onPress={handleSaveProduct}
                   disabled={submitting}
                   className="bg-black h-16 rounded-full items-center justify-center mt-8 mb-4 active:opacity-90"
                 >
                   {submitting ? (
                     <ActivityIndicator color="white" />
                   ) : (
-                    <Text className="text-white font-black text-lg">Save Product</Text>
+                    <Text className="text-white font-black text-lg">
+                      {editingProduct ? 'Update Product' : 'Save Product'}
+                    </Text>
                   )}
                 </Pressable>
               </ScrollView>
@@ -316,13 +376,13 @@ export default function ProductsScreen() {
   );
 }
 
-function ProductCard({ product }: { product: any }) {
+function ProductCard({ product, onEdit, onDelete }: { product: any, onEdit: () => void, onDelete: () => void }) {
   const isOutOfStock = (product.stock || 0) <= 0;
 
   return (
     <View className="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm">
-      {/* Status Badge */}
-      <View className="flex-row mb-4">
+      {/* Status Badge & Actions */}
+      <View className="flex-row justify-between items-center mb-4">
         <View className="flex-row items-center bg-slate-100 px-3 py-1.5 rounded-lg">
           {isOutOfStock ? (
              <>
@@ -332,6 +392,15 @@ function ProductCard({ product }: { product: any }) {
           ) : (
             <Text className="text-[10px] font-black text-black uppercase tracking-wider">IN STOCK ({product.stock})</Text>
           )}
+        </View>
+
+        <View className="flex-row gap-2">
+          <Pressable onPress={onEdit} className="w-10 h-10 bg-slate-100 rounded-full items-center justify-center active:bg-slate-200">
+            <Ionicons name="pencil" size={16} color="black" />
+          </Pressable>
+          <Pressable onPress={onDelete} className="w-10 h-10 bg-red-50 rounded-full items-center justify-center active:bg-red-100">
+            <Ionicons name="trash-outline" size={16} color="#EF4444" />
+          </Pressable>
         </View>
       </View>
 

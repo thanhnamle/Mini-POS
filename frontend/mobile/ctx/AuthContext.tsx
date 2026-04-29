@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return 'Diamond';
   };
 
-  const fetchProfile = async (userId: string, currentUser?: User | null) => {
+  const fetchProfile = useCallback(async (userId: string, currentUser?: User | null) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -51,7 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setPoints(pts);
         setPhone(data.phone || '');
         
-        // Ưu tiên tính hạng theo điểm để đảm bảo tính cập nhật
         setRank(calculateRank(pts));
       } else {
         const metadataRole = currentUser?.user_metadata?.role as Role;
@@ -62,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Unexpected error fetching profile:', err);
       setRole(null);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Initial session check
@@ -92,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchProfile]);
 
   const signOut = async () => {
     await supabase.auth.signOut();

@@ -148,8 +148,13 @@ export default function OrdersScreen() {
 }
 
 function OrderCard({ order }: { order: any }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <View className="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm">
+    <Pressable 
+      onPress={() => setExpanded(!expanded)}
+      className="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm"
+    >
       {/* Card Header */}
       <View className="flex-row justify-between items-center mb-3">
         <Text className="text-[12px] font-black text-slate-400 uppercase tracking-widest">
@@ -169,7 +174,7 @@ function OrderCard({ order }: { order: any }) {
       </Text>
 
       {/* Info Container */}
-      <View className="bg-slate-50 rounded-[24px] p-5 mb-6">
+      <View className="bg-slate-50 rounded-[24px] p-5 mb-4">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-slate-400 font-bold">Items ({order.items_count})</Text>
           <Text className="text-slate-900 font-black text-lg">${parseFloat(order.total_amount).toFixed(2)}</Text>
@@ -188,19 +193,48 @@ function OrderCard({ order }: { order: any }) {
         </View>
       </View>
 
+      {/* --- PRODUCT DETAILS (EXPANDABLE) --- */}
+      {expanded && (
+        <View className="mb-6 px-2">
+          <View className="h-[1px] bg-slate-200 mb-4" />
+          <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Order Details</Text>
+          
+          {(order.order_items || []).map((item: any, idx: number) => (
+            <View key={idx} className="flex-row justify-between items-center mb-3">
+              <View className="flex-1">
+                <Text className="font-black text-slate-900 text-sm" numberOfLines={1}>
+                  {item.products?.name || 'Unknown Product'}
+                </Text>
+                <Text className="text-[10px] font-bold text-slate-400">
+                  SIZE: {item.selected_size || 'N/A'}
+                </Text>
+              </View>
+              <View className="items-end">
+                <Text className="font-black text-slate-900 text-sm">x{item.quantity}</Text>
+                <Text className="text-[10px] font-bold text-slate-400">
+                  ${(parseFloat(item.unit_price) * item.quantity).toFixed(2)}
+                </Text>
+              </View>
+            </View>
+          ))}
+          
+          {(!order.order_items || order.order_items.length === 0) && (
+            <Text className="text-slate-400 text-xs italic">No item details available</Text>
+          )}
+        </View>
+      )}
 
       {/* Action Button */}
-      <Pressable 
-        className="bg-black h-14 rounded-full items-center justify-center active:opacity-90"
-        style={({ pressed }) => ({
-          transform: [{ scale: pressed ? 0.98 : 1 }]
-        })}
-      >
-        <Text className="text-white font-black text-base">
-          {order.id === '1043' ? 'Mark Delivered' : 'Confirm Order'}
-        </Text>
-      </Pressable>
-    </View>
+      <View className="flex-row gap-3">
+        <Pressable 
+          className="flex-1 bg-black h-14 rounded-full items-center justify-center active:opacity-90"
+        >
+          <Text className="text-white font-black text-base">
+            {order.status === 'Pending' ? 'Confirm Order' : 'Mark Delivered'}
+          </Text>
+        </Pressable>
+      </View>
+    </Pressable>
   );
 }
 

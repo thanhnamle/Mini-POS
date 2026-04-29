@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+const HERO_HEIGHT = 500;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Feature = {
@@ -125,8 +127,7 @@ function HeroScene() {
       {/* Premium Generated Background */}
       <Image 
         source={require('../assets/images/hero_bw.png')} 
-        style={StyleSheet.absoluteFillObject}
-        resizeMode="cover"
+        style={[StyleSheet.absoluteFillObject, { resizeMode: 'contain', width: '100%', height: '100%', borderRadius: 32 }]}
       />
 
       {/* Corner accent label */}
@@ -328,18 +329,21 @@ const styles = StyleSheet.create({
 
   // Hero container
   heroWrap: {
-    marginBottom: 36,
+    marginBottom: 44,
+    height: HERO_HEIGHT,
+    borderRadius: 32,
+    overflow: 'hidden',
+    backgroundColor: '#ffffff63',
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 8,
   },
   heroContainer: {
-    height: 220,
-    borderRadius: 20,
+    height: HERO_HEIGHT,
+    borderRadius: 32,
     overflow: 'hidden',
-    backgroundColor: '#000000',
-    shadowColor: '#000000',
-    shadowOpacity: 0.15,
-    shadowRadius: 28,
-    shadowOffset: { width: 0, height: 14 },
-    elevation: 12,
+    backgroundColor: '#ffffff28',
   },
   heroBadge: {
     position: 'absolute',
