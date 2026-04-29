@@ -1,35 +1,49 @@
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+const { Client } = require('pg');
 
-// Initialize the DynamoDB client
-const dbClient = new DynamoDBClient({});
-const dynamo = DynamoDBDocumentClient.from(dbClient);
-
-const tableName = process.env.PRODUCTS_TABLE_NAME;
+const dbConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false // Required for Supabase connections
+    }
+};
 
 exports.handler = async (event) => {
+    const client = new Client(dbConfig);
+    
     try {
-        const command = new ScanCommand({
-            TableName: tableName,
-        });
+        if (!process.env.DATABASE_URL) {
+            throw new Error("DATABASE_URL is not defined in environment variables");
+        }
 
-        const result = await dynamo.send(command);
+        await client.connect();
+
+        // Query to fetch all products from the Supabase 'products' table
+        // We can join with categories if needed, but for now, let's keep it simple
+        const query = 'SELECT * FROM products ORDER BY created_at DESC';
+        const result = await client.query(query);
 
         return {
             statusCode: 200,
             headers: {
                 'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*', // Ensure CORS is handled
             },
-            body: JSON.stringify(result.Items),
+            body: JSON.stringify(result.rows),
         };
     } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error('Error fetching products from Supabase:', error);
         return {
             statusCode: 500,
             headers: {
                 'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
             },
-            body: JSON.stringify({ error: 'Failed to fetch products' }),
+            body: JSON.stringify({ 
+                error: 'Failed to fetch products',
+                details: error.message 
+            }),
         };
+    } finally {
+        await client.end();
     }
 };

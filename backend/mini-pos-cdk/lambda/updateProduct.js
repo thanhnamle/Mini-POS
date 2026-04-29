@@ -1,56 +1,58 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, UpdateCommand } = require("@aws-sdk/lib-dynamodb");
+const { Client } = require('pg');
 
-// Initialize the DynamoDB client
-const dbClient = new DynamoDBClient({});
-const dynamo = DynamoDBDocumentClient.from(dbClient);
-
-const tableName = process.env.PRODUCTS_TABLE_NAME;
+const dbConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+};
 
 exports.handler = async (event) => {
-  try {
-    // Extract the productId from the URL path
-    const productId = event.pathParameters.productId;
-    const requestBody = JSON.parse(event.body);
-    const stock = Number(requestBody.stock ?? requestBody.inventory ?? 0);
-    const description = requestBody.description ?? '';
+    const client = new Client(dbConfig);
+    try {
+        const productId = event.pathParameters.productId;
+        const body = JSON.parse(event.body);
+        await client.connect();
 
-    // Update the item in DynamoDB
-    const command = new UpdateCommand({
-      TableName: tableName,
-      Key: {
-        productId: productId,
-      },
-      // Using expression attributes to avoid reserved word conflicts (like 'name')
-      UpdateExpression: "set #n = :n, price = :p, category = :c, stock = :s, description = :d",
-      ExpressionAttributeNames: {
-        "#n": "name",
-      },
-      ExpressionAttributeValues: {
-        ":n": requestBody.name,
-        ":p": Number(requestBody.price || 0),
-        ":c": requestBody.category || 'General',
-        ":s": stock,
-        ":d": description,
-      },
-      ReturnValues: "ALL_NEW", // Returns the item as it appears after the update
-    });
+        const query = `
+            UPDATE products 
+            SET name = $1, description = $2, price = $3, stock = $4, category_id = $5, sku = $6, image_url = $7, updated_at = NOW()
+            WHERE id = $8
+            RETURNING *;
+        `;
+        
+        const values = [
+            body.name,
+            body.description,
+            Number(body.price),
+            Number(body.stock),
+            body.category_id,
+            body.sku,
+            body.image_url,
+            productId
+        ];
 
-    const response = await dynamo.send(command);
+        const result = await client.query(query, values);
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        message: "Product updated successfully", 
-        updatedProduct: response.Attributes 
-      }),
-    };
-  } catch (error) {
-    console.error("Error updating product:", error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: "Failed to update product." }),
-    };
-  }
+        if (result.rowCount === 0) {
+            return {
+                statusCode: 404,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+                body: JSON.stringify({ error: 'Product not found' }),
+            };
+        }
+
+        return {
+            statusCode: 200,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            body: JSON.stringify(result.rows[0]),
+        };
+    } catch (error) {
+        console.error('Error updating product:', error);
+        return {
+            statusCode: 500,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            body: JSON.stringify({ error: 'Failed to update product', details: error.message }),
+        };
+    } finally {
+        await client.end();
+    }
 };

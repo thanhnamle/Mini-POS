@@ -57,61 +57,55 @@ export default function CheckoutScreen() {
 
     try {
       setProcessing(true);
-      const pointsToEarn = Math.floor(grandTotal);
-      setEarnedPoints(pointsToEarn);
       
-      const orderNumber = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+      const API_URL = 'https://767blee8h7.execute-api.ap-southeast-2.amazonaws.com/prod';
 
-      // 1. Create Order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
+      // Call AWS Lambda API
+      const response = await fetch(`${API_URL}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           user_id: user.id,
-          order_number: orderNumber,
-          status: 'paid',
-          total_amount: grandTotal,
-          subtotal: subtotal,
+          items: checkoutItems.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity || 1
+          })),
+          payment_method: paymentMethod,
           tax_rate: 8.00,
-          items_count: checkoutItems.length,
-          payment_method: paymentMethod
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // 2. Create Order Items
-      const orderItemsToInsert = checkoutItems.map(item => ({
-        order_id: order.id,
-        product_id: item.id,
-        quantity: item.quantity || 1,
-        unit_price: item.price,
-        subtotal: item.price * (item.quantity || 1)
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItemsToInsert);
-
-      if (itemsError) throw itemsError;
-
-      // 3. Update Loyalty Points
-      const { error: loyaltyError } = await supabase.rpc('increment_loyalty_points', {
-        user_id_param: user.id,
-        points_to_add: pointsToEarn
+          discount_amount: 0
+        }),
       });
 
-      if (loyaltyError) {
-        // Fallback if RPC fails
-        const { data: profile } = await supabase.from('profiles').select('loyalty_points').eq('id', user.id).single();
-        await supabase.from('profiles').update({ loyalty_points: (profile?.loyalty_points || 0) + pointsToEarn }).eq('id', user.id);
+      let result;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(`Server Error: ${response.status} - ${text || 'Unknown Error'}`);
       }
+
+      if (!response.ok) {
+        const errorMsg = result.error && result.details 
+          ? `${result.error}: ${result.details}` 
+          : (result.error || result.details || `Error ${response.status}: Failed to process order`);
+        throw new Error(errorMsg);
+      }
+
+
+
+      // Update local state with earned points from backend
+      setEarnedPoints(result.earned_points || 0);
 
       if (!params.buyNowId) {
         clearCart();
       }
 
-      // 5. Refresh user profile to show new points
+      // Refresh user profile to show new points (which were updated by backend)
       await refreshProfile();
 
       setSuccessVisible(true);
@@ -122,6 +116,7 @@ export default function CheckoutScreen() {
       setProcessing(false);
     }
   };
+
 
 
   const handleViewHistory = () => {

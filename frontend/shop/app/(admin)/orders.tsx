@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,52 +8,59 @@ import {
   StyleSheet,
   TextInput,
   Dimensions,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { Search, SlidersHorizontal, Clock, Wallet, Banknote, CheckCircle2 } from 'lucide-react-native';
+import { Search, SlidersHorizontal, Clock, Wallet, Banknote } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
+const API_URL = 'https://767blee8h7.execute-api.ap-southeast-2.amazonaws.com/prod';
 
-const MOCK_ORDERS = [
-  {
-    id: '1042',
-    customer: 'Jane Doe',
-    itemsCount: 3,
-    total: 145.00,
-    paymentMethod: 'Cash (COD)',
-    paymentType: 'cod',
-    status: 'Pending',
-  },
-  {
-    id: '1043',
-    customer: 'John Smith',
-    itemsCount: 1,
-    total: 320.00,
-    paymentMethod: 'Digital',
-    paymentType: 'digital',
-    status: 'Pending',
-  },
-  {
-    id: '1044',
-    customer: 'Alice Cooper',
-    itemsCount: 5,
-    total: 85.50,
-    paymentMethod: 'Cash (COD)',
-    paymentType: 'cod',
-    status: 'Pending',
-  },
-];
-
-type OrderStatus = 'Pending' | 'Confirmed' | 'Delivered';
+type OrderStatus = 'Pending' | 'Completed' | 'Cancelled';
 
 export default function OrdersScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<OrderStatus>('Pending');
   const [searchQuery, setSearchQuery] = useState('');
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const tabs: OrderStatus[] = ['Pending', 'Confirmed', 'Delivered'];
+  const tabs: OrderStatus[] = ['Pending', 'Completed', 'Cancelled'];
+
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch(`${API_URL}/orders`);
+      const data = await response.json();
+      if (response.ok) {
+        setOrders(data);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchOrders();
+  };
+
+  const filteredOrders = orders.filter(order => {
+    const matchesStatus = order.status?.toLowerCase() === activeTab.toLowerCase();
+    const matchesSearch = (order.order_number || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (order.customer_name || '').toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   return (
     <View style={styles.container}>
@@ -78,6 +85,7 @@ export default function OrdersScreen() {
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* --- TITLE SECTION --- */}
         <View className="px-6 pt-6 mb-6">
@@ -126,9 +134,15 @@ export default function OrdersScreen() {
 
         {/* --- ORDERS LIST --- */}
         <View className="px-6 space-y-6 flex-col gap-6">
-          {MOCK_ORDERS.map((order) => (
-            <OrderCard key={order.id} order={order} />
-          ))}
+          {loading ? (
+            <ActivityIndicator size="large" color="#000" />
+          ) : filteredOrders.length > 0 ? (
+            filteredOrders.map((order) => (
+              <OrderCard key={order.id} order={order} />
+            ))
+          ) : (
+            <Text className="text-center py-20 text-slate-400 font-bold">No orders found</Text>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -141,40 +155,41 @@ function OrderCard({ order }: { order: any }) {
       {/* Card Header */}
       <View className="flex-row justify-between items-center mb-3">
         <Text className="text-[12px] font-black text-slate-400 uppercase tracking-widest">
-          ORDER #{order.id}
+          {order.order_number || `#${order.id.substring(0,8)}`}
         </Text>
         <View className="flex-row items-center bg-slate-100 px-3 py-1.5 rounded-full">
           <Clock size={12} color="black" strokeWidth={3} />
           <Text className="text-[10px] font-black ml-1.5 text-black">
-            {order.status}
+            {order.status?.toUpperCase()}
           </Text>
         </View>
       </View>
 
       {/* Customer Name */}
       <Text className="text-[22px] font-[900] text-slate-900 mb-5">
-        {order.customer}
+        {order.customer_name || 'Guest Customer'}
       </Text>
 
       {/* Info Container */}
       <View className="bg-slate-50 rounded-[24px] p-5 mb-6">
         <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-slate-400 font-bold">Items ({order.itemsCount})</Text>
-          <Text className="text-slate-900 font-black text-lg">${order.total.toFixed(2)}</Text>
+          <Text className="text-slate-400 font-bold">Items ({order.items_count})</Text>
+          <Text className="text-slate-900 font-black text-lg">${parseFloat(order.total_amount).toFixed(2)}</Text>
         </View>
         
         <View className="flex-row justify-between items-center">
           <Text className="text-slate-400 font-bold">Payment</Text>
           <View className="flex-row items-center">
-            {order.paymentType === 'cod' ? (
+            {order.payment_method?.toLowerCase() === 'cash' ? (
               <Banknote size={16} color="black" />
             ) : (
-              <Wallet size={16} color="black" />
+              <Wallet size={16} color="#4A90E2" />
             )}
-            <Text className="text-black font-black ml-2">{order.paymentMethod}</Text>
+            <Text className="text-black font-black ml-2">{order.payment_method || 'Unknown'}</Text>
           </View>
         </View>
       </View>
+
 
       {/* Action Button */}
       <Pressable 

@@ -1,15 +1,16 @@
+require('dotenv').config();
 const { Stack, RemovalPolicy, CfnOutput } = require('aws-cdk-lib');
 const dynamodb = require('aws-cdk-lib/aws-dynamodb');
 const lambda = require('aws-cdk-lib/aws-lambda');
 const apigateway = require('aws-cdk-lib/aws-apigateway');
 const path = require('path');
-// const sqs = require('aws-cdk-lib/aws-sqs');
 
 class MiniPosCdkStack extends Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
 
-    // 1. Create DynamoDB tables for products and orders
+    // 1. [DEPRECATED] DynamoDB tables - We are moving to Supabase Postgres
+    // Keeping these for now to avoid breaking existing CDK deployments immediately
     const productsTable = new dynamodb.Table(this, 'ProductsTable', {
       partitionKey: {name: 'productId', type: dynamodb.AttributeType.STRING},
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -22,13 +23,21 @@ class MiniPosCdkStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    // 2. Create Lambda functions for handling API requests
+    // 2. Shared Environment Variables for Supabase
+    const supabaseEnv = {
+      DATABASE_URL: process.env.DATABASE_URL || '',
+      SUPABASE_JWT_SECRET: process.env.SUPABASE_JWT_SECRET || '',
+    };
+
+    // 3. Create Lambda functions for handling API requests
+    // All Lambdas now point to Supabase Postgres via DATABASE_URL
     const getProductsLambda = new lambda.Function(this, 'GetProductsLambda', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'getProducts.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
-        PRODUCTS_TABLE_NAME: productsTable.tableName,
+        ...supabaseEnv,
+        PRODUCTS_TABLE_NAME: productsTable.tableName, // Still passing for compatibility
       },
     });
 
@@ -37,6 +46,7 @@ class MiniPosCdkStack extends Stack {
       handler: 'createProduct.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
+        ...supabaseEnv,
         PRODUCTS_TABLE_NAME: productsTable.tableName,
       },
     });
@@ -46,6 +56,7 @@ class MiniPosCdkStack extends Stack {
       handler: 'updateProduct.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
+        ...supabaseEnv,
         PRODUCTS_TABLE_NAME: productsTable.tableName,
       },
     });
@@ -55,6 +66,7 @@ class MiniPosCdkStack extends Stack {
       handler: 'deleteProduct.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
+        ...supabaseEnv,
         PRODUCTS_TABLE_NAME: productsTable.tableName,
       },
     });
@@ -65,6 +77,7 @@ class MiniPosCdkStack extends Stack {
       handler: 'getOrders.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
+        ...supabaseEnv,
         ORDERS_TABLE_NAME: ordersTable.tableName,
       },
     });
@@ -74,23 +87,20 @@ class MiniPosCdkStack extends Stack {
       handler: 'createOrder.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
+        ...supabaseEnv,
         ORDERS_TABLE_NAME: ordersTable.tableName,
       },
     });
 
-    // Grant the Lambda function read permissions on the products table
+    // Grant permissions (Still granting DynamoDB for now, though we'll use Supabase)
     productsTable.grantReadData(getProductsLambda);
-    // Grant the Lambda function covers PutItem, UpdateItem, and DeleteItem permissions on the products table
     productsTable.grantWriteData(createProductLambda);
     productsTable.grantWriteData(updateProductLambda);
     productsTable.grantWriteData(deleteProductLambda);
-
-    // Grant the Lambda function read permissions on the orders table
     ordersTable.grantReadData(getOrdersLambda);
-    // Grant the Lambda function write permissions on the orders table
     ordersTable.grantWriteData(createOrderLambda);
 
-    // 3. Create API Gateway REST API
+    // 4. Create API Gateway REST API
     const api = new apigateway.RestApi(this, 'MiniPosApi', {
       restApiName: 'Mini POS Service',
       description: 'This service serves products and orders for the Mini POS application.',
@@ -100,18 +110,15 @@ class MiniPosCdkStack extends Stack {
       },
     });
 
-    // 4. Define API resources and methods
-    // Product Routes (/products)
+    // 5. Define API resources and methods
     const productsResource = api.root.addResource('products');
     productsResource.addMethod('GET', new apigateway.LambdaIntegration(getProductsLambda));
     productsResource.addMethod('POST', new apigateway.LambdaIntegration(createProductLambda));
 
-    // Single Product Routes (/products/{productId})
     const singleProductResource = productsResource.addResource('{productId}');
     singleProductResource.addMethod('PUT', new apigateway.LambdaIntegration(updateProductLambda));
     singleProductResource.addMethod('DELETE', new apigateway.LambdaIntegration(deleteProductLambda));
 
-    // Order Routes (/orders)
     const ordersResource = api.root.addResource('orders');
     ordersResource.addMethod('GET', new apigateway.LambdaIntegration(getOrdersLambda));
     ordersResource.addMethod('POST', new apigateway.LambdaIntegration(createOrderLambda));
@@ -120,7 +127,6 @@ class MiniPosCdkStack extends Stack {
       value: api.url,
       description: 'Base URL for the Mini POS API Gateway deployment.',
     });
-
   }
 }
 

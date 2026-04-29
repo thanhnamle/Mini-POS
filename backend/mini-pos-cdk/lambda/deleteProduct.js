@@ -1,37 +1,40 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, DeleteCommand } = require("@aws-sdk/lib-dynamodb");
+const { Client } = require('pg');
 
-// Initialize the DynamoDB client
-const dbClient = new DynamoDBClient({});
-const dynamo = DynamoDBDocumentClient.from(dbClient);
-
-const tableName = process.env.PRODUCTS_TABLE_NAME;
+const dbConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+};
 
 exports.handler = async (event) => {
-  try {
-    // Extract the productId from the URL path
-    const productId = event.pathParameters.productId;
+    const client = new Client(dbConfig);
+    try {
+        const productId = event.pathParameters.productId;
+        await client.connect();
 
-    // Delete the item from DynamoDB
-    const command = new DeleteCommand({
-      TableName: tableName,
-      Key: {
-        productId: productId,
-      },
-    });
+        const query = 'DELETE FROM products WHERE id = $1';
+        const result = await client.query(query, [productId]);
 
-    await dynamo.send(command);
+        if (result.rowCount === 0) {
+            return {
+                statusCode: 404,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+                body: JSON.stringify({ error: 'Product not found' }),
+            };
+        }
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: `Product ${productId} deleted successfully` }),
-    };
-  } catch (error) {
-    console.error("Error deleting product:", error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: "Failed to delete product." }),
-    };
-  }
+        return {
+            statusCode: 200,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            body: JSON.stringify({ message: `Product ${productId} deleted successfully` }),
+        };
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        return {
+            statusCode: 500,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            body: JSON.stringify({ error: 'Failed to delete product', details: error.message }),
+        };
+    } finally {
+        await client.end();
+    }
 };

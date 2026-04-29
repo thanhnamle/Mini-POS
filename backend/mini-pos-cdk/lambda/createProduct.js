@@ -1,54 +1,53 @@
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
-const crypto = require('crypto');
+const { Client } = require('pg');
 
-const dbClient = new DynamoDBClient({});
-const dynamo = DynamoDBDocumentClient.from(dbClient);
-
-const tableName = process.env.PRODUCTS_TABLE_NAME;
+const dbConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+};
 
 exports.handler = async (event) => {
+    const client = new Client(dbConfig);
     try {
-        // Parse the incoming request body
-        const requestBody = JSON.parse(event.body);
+        const body = JSON.parse(event.body);
+        await client.connect();
 
-        // Generate a unique ID for the new product
-        const newProduct = {
-            productId: crypto.randomUUID(),
-            name: requestBody.name,
-            price: Number(requestBody.price || 0),
-            category: requestBody.category || 'General',
-            stock: Number(requestBody.stock || requestBody.inventory || 0),
-            description: requestBody.description || '',
-        };
+        const query = `
+            INSERT INTO products (name, description, price, stock, category_id, sku, image_url)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING *;
+        `;
+        
+        const values = [
+            body.name,
+            body.description || '',
+            Number(body.price || 0),
+            Number(body.stock || 0),
+            body.category_id || null, // Assuming UUID
+            body.sku || '',
+            body.image_url || ''
+        ];
 
-        const command = new PutCommand({
-            TableName: tableName,
-            Item: newProduct,
-        });
-
-        await dynamo.send(command);
+        const result = await client.query(query, values);
 
         return {
             statusCode: 201,
-            headers: {
+            headers: { 
                 'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
-            body: JSON.stringify(newProduct),
+            body: JSON.stringify(result.rows[0]),
         };
     } catch (error) {
         console.error('Error creating product:', error);
-
         return {
             statusCode: 500,
-            headers: {
+            headers: { 
                 'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
-            body: JSON.stringify({
-                message: 'Failed to create product',
-                errorDetails: error.message,
-                errorStack: error.stack,
-            }),
+            body: JSON.stringify({ error: 'Failed to create product', details: error.message }),
         };
+    } finally {
+        await client.end();
     }
 };

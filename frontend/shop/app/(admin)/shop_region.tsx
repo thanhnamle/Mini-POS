@@ -27,7 +27,7 @@ export default function ShopRegionScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable style={styles.iconBtn} onPress={() => router.back()}>
+          <Pressable style={styles.iconBtn} onPress={() => router.push('/(admin)/settings')}>
             <Ionicons name="arrow-back" size={24} color="#111111" />
           </Pressable>
           <Text style={styles.headerTitle}>Shop Region</Text>

@@ -1,39 +1,43 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, ScanCommand } = require("@aws-sdk/lib-dynamodb");
+const { Client } = require('pg');
 
-const dbClient = new DynamoDBClient({});
-const dynamo = DynamoDBDocumentClient.from(dbClient);
-
-const tableName = process.env.ORDERS_TABLE_NAME;
+const dbConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+};
 
 exports.handler = async (event) => {
+    const client = new Client(dbConfig);
     try {
-        const command = new ScanCommand({
-            TableName: tableName,
-        });
+        await client.connect();
 
-        const result = await dynamo.send(command);
+        // Query to fetch orders joined with profile information
+        const query = `
+            SELECT o.*, p.full_name as customer_name, p.email as customer_email
+            FROM orders o
+            LEFT JOIN profiles p ON o.user_id = p.id
+            ORDER BY o.created_at DESC;
+        `;
+        const result = await client.query(query);
 
         return {
             statusCode: 200,
-            headers: {
+            headers: { 
                 'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
-            body: JSON.stringify(result.Items),
+            body: JSON.stringify(result.rows),
         };
     } catch (error) {
         console.error('Error fetching orders:', error);
-
         return {
             statusCode: 500,
-            headers: {
+            headers: { 
                 'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
-            body: JSON.stringify({
-                message: 'Failed to fetch orders',
-                errorDetails: error.message,
-                errorStack: error.stack
-            }),
+            body: JSON.stringify({ error: 'Failed to fetch orders', details: error.message }),
         };
+    } finally {
+        await client.end();
     }
-}
+};

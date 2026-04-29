@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,9 +14,50 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+const API_URL = 'https://767blee8h7.execute-api.ap-southeast-2.amazonaws.com/prod';
+
 export default function AdminDashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch(`${API_URL}/orders`);
+      const data = await response.json();
+      if (response.ok) {
+        setOrders(data);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchDashboardData();
+  };
+
+  const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
+  const totalItemsSold = orders.reduce((sum, order) => sum + (order.items_count || 0), 0);
+  const recentTransactions = orders.slice(0, 5);
+
+  if (loading) {
+    return (
+      <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  }
 
   return (
     <View style={s.container}>
@@ -39,6 +82,9 @@ export default function AdminDashboard() {
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {/* --- TITLE SECTION --- */}
         <View className="px-6 pt-6 mb-8">
@@ -58,59 +104,25 @@ export default function AdminDashboard() {
                 <Ionicons name="cash-outline" size={24} color="#000000" />
               </View>
               <View className="bg-white px-4 py-2 rounded-full border border-slate-100">
-                <Text className="text-[10px] font-black tracking-[1px] text-slate-400">DAILY</Text>
+                <Text className="text-[10px] font-black tracking-[1px] text-slate-400">LIFETIME</Text>
               </View>
             </View>
             
             <Text className="text-slate-500 font-bold mb-2">Total Revenue</Text>
             <View className="flex-row items-baseline">
               <Text className="text-[44px] font-[900] text-slate-900 tracking-[-2px]">
-                $4,280
+                ${Math.floor(totalRevenue).toLocaleString()}
               </Text>
               <Text className="text-[24px] font-[900] text-slate-400 ml-1">
-                .50
+                .{(totalRevenue % 1).toFixed(2).substring(2)}
               </Text>
             </View>
             
             <View className="flex-row items-center mt-4">
               <Ionicons name="trending-up" size={16} color="#10B981" />
-              <Text className="text-[#10B981] font-bold ml-1">+12.5%</Text>
-              <Text className="text-slate-400 font-medium ml-1">vs yesterday</Text>
+              <Text className="text-[#10B981] font-bold ml-1">+Real-time</Text>
+              <Text className="text-slate-400 font-medium ml-1">data from API</Text>
             </View>
-          </View>
-        </View>
-
-        {/* --- MONTHLY REVENUE CARD --- */}
-        <View className="px-6 mb-6">
-          <View className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm">
-            <View className="flex-row justify-between items-center mb-6">
-              <Ionicons name="stats-chart" size={24} color="#000000" />
-              <View className="bg-slate-100 px-4 py-2 rounded-full">
-                <Text className="text-[10px] font-black tracking-[1px] text-slate-400">MONTHLY</Text>
-              </View>
-            </View>
-            
-            <Text className="text-slate-500 font-bold mb-2">Total Revenue (MTD)</Text>
-            <View className="flex-row items-baseline mb-6">
-              <Text className="text-[44px] font-[900] text-slate-900 tracking-[-2px]">
-                $86,400
-              </Text>
-              <Text className="text-[24px] font-[900] text-slate-400 ml-1">
-                .00
-              </Text>
-            </View>
-
-            {/* DUMMY CHART */}
-            <View className="flex-row items-end justify-between h-20 pt-4">
-              {[30, 50, 40, 20, 70, 60, 80, 100].map((h, i) => (
-                <View 
-                  key={i} 
-                  style={{ height: `${h}%` }} 
-                  className={`w-[8%] rounded-full ${i === 7 ? 'bg-black' : 'bg-slate-100'}`}
-                />
-              ))}
-            </View>
-            <Text className="text-[10px] font-bold text-slate-400 text-right mt-2">$12k</Text>
           </View>
         </View>
 
@@ -122,7 +134,7 @@ export default function AdminDashboard() {
             </View>
             <Text className="text-slate-400 font-bold mb-1">Products Sold</Text>
             <Text className="text-[48px] font-[900] text-white tracking-[-2px]">
-              1,248
+              {totalItemsSold.toLocaleString()}
             </Text>
           </View>
         </View>
@@ -131,16 +143,27 @@ export default function AdminDashboard() {
         <View className="px-6">
           <View className="flex-row justify-between items-center mb-6">
             <Text className="text-lg font-black text-slate-900">Recent Transactions</Text>
-            <Pressable>
+            <Pressable onPress={() => router.push('/(admin)/orders')}>
               <Text className="text-[11px] font-black text-slate-400 uppercase tracking-[1px]">View All</Text>
             </Pressable>
           </View>
 
           {/* Transaction Items */}
           <View className="bg-slate-50 rounded-[32px] p-4 mb-20">
-            <TransactionItem id="#8842" items={2} time="10:42 AM" amount="142.00" />
-            <View className="h-[1px] bg-slate-100 mx-4" />
-            <TransactionItem id="#8841" items={1} time="10:15 AM" amount="45.00" />
+            {recentTransactions.map((order) => (
+              <React.Fragment key={order.id}>
+                <TransactionItem 
+                  id={order.order_number || `#${order.id.substring(0,4)}`} 
+                  items={order.items_count} 
+                  time={new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
+                  amount={parseFloat(order.total_amount).toFixed(2)} 
+                />
+                <View className="h-[1px] bg-slate-100 mx-4" />
+              </React.Fragment>
+            ))}
+            {recentTransactions.length === 0 && (
+              <Text className="text-center py-10 text-slate-400 font-bold">No transactions yet</Text>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -155,7 +178,7 @@ function TransactionItem({ id, items, time, amount }: { id: string, items: numbe
         <Ionicons name="receipt-outline" size={24} color="#000000" />
       </View>
       <View className="flex-1 ml-4">
-        <Text className="text-base font-black text-slate-900">Order {id}</Text>
+        <Text className="text-base font-black text-slate-900">{id}</Text>
         <Text className="text-xs font-bold text-slate-400">{items} items • {time}</Text>
       </View>
       <Text className="text-lg font-[900] text-slate-900">${amount}</Text>

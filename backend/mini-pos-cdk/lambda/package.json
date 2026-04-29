@@ -1,0 +1,9 @@
+{
+  "name": "mini-pos-lambda",
+  "version": "1.0.0",
+  "description": "Lambda functions for Mini POS",
+  "main": "index.js",
+  "dependencies": {
+    "pg": "^8.20.0"
+  }
+}

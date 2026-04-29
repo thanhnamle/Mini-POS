@@ -1,65 +1,127 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, PutCommand } = require("@aws-sdk/lib-dynamodb");
-const crypto = require("crypto");
+const { Client } = require('pg');
 
-const dbClient = new DynamoDBClient({});
-const dynamo = DynamoDBDocumentClient.from(dbClient);
-
-const tableName = process.env.ORDERS_TABLE_NAME;
+const dbConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+};
 
 exports.handler = async (event) => {
+    const client = new Client(dbConfig);
     try {
-        const requestBody = JSON.parse(event.body);
+        const body = JSON.parse(event.body);
+        const { user_id, items, payment_method, tax_rate = 8, discount_amount = 0 } = body;
 
-        // Calculate the total amount from the items array
-        let totalAmount = 0;
-        if (requestBody.items && Array.isArray(requestBody.items)) {
-            requestBody.items.forEach(item => {
-                totalAmount += item.price * item.quantity;
-            });
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return {
+                statusCode: 400,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+                body: JSON.stringify({ error: 'Order must contain items' }),
+            };
         }
 
-        const createdAt = new Date().toISOString();
+        await client.connect();
 
-        // Create the new order object
-        const newOrder = {
-            orderId: crypto.randomUUID(),
-            items: Array.isArray(requestBody.items) ? requestBody.items : [],
-            total: totalAmount,
-            totalAmount: totalAmount,
-            status: requestBody.status || 'pending',
-            createdAt,
-            timestamp: createdAt,
-        };
+        // Start Transaction
+        await client.query('BEGIN');
 
-        // Save the new order to DynamoDB
-        const command = new PutCommand({
-            TableName: tableName,
-            Item: newOrder,
+        // 1. Calculate totals
+        let subtotal = 0;
+        items.forEach(item => {
+            subtotal += item.price * (item.quantity || 1);
         });
+        const taxAmount = subtotal * (tax_rate / 100);
+        const totalAmount = subtotal + taxAmount - discount_amount;
+        
+        // Generate Order Number
+        const orderNumber = `ORD-${Math.floor(1000 + Math.random() * 9000)}-${Date.now().toString().slice(-4)}`;
 
-        await dynamo.send(command);
+        // 2. Insert Order
+        const orderQuery = `
+            INSERT INTO orders (user_id, order_number, total_amount, subtotal, tax_rate, discount_amount, payment_method, items_count, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING *;
+        `;
+        const orderResult = await client.query(orderQuery, [
+            user_id || null,
+            orderNumber,
+            totalAmount,
+            subtotal,
+            tax_rate,
+            discount_amount,
+            payment_method || 'Cash',
+            items.length,
+            'completed'
+        ]);
+        const order = orderResult.rows[0];
+
+        // 3. Insert Order Items & Update Stock
+        for (const item of items) {
+            const itemQuery = `
+                INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal)
+                VALUES ($1, $2, $3, $4, $5);
+            `;
+            await client.query(itemQuery, [
+                order.id,
+                item.id || item.product_id,
+                item.quantity || 1,
+                item.price,
+                item.price * (item.quantity || 1)
+            ]);
+
+            // Update product stock
+            const stockQuery = `
+                UPDATE products 
+                SET stock = stock - $1 
+                WHERE id = $2 AND stock >= $1;
+            `;
+            const stockResult = await client.query(stockQuery, [item.quantity || 1, item.id || item.product_id]);
+            
+            if (stockResult.rowCount === 0) {
+                throw new Error(`Insufficient stock for product: ${item.name || item.id}`);
+            }
+        }
+
+        // 4. Update Loyalty Points & Total Spent (if user_id exists)
+        if (user_id) {
+            const pointsToEarn = Math.floor(totalAmount);
+            const profileUpdateQuery = `
+                UPDATE profiles 
+                SET loyalty_points = loyalty_points + $1,
+                    total_spent = total_spent + $2
+                WHERE id = $3;
+            `;
+            await client.query(profileUpdateQuery, [pointsToEarn, totalAmount, user_id]);
+        }
+
+        // Commit Transaction
+        await client.query('COMMIT');
 
         return {
             statusCode: 201,
-            headers: {
+            headers: { 
                 'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
-            body: JSON.stringify(newOrder),
+            body: JSON.stringify({ 
+                message: 'Order created successfully', 
+                order: order,
+                earned_points: user_id ? Math.floor(totalAmount) : 0
+            }),
         };
     } catch (error) {
-    console.error("Error processing order:", error);
-    
+        // Rollback Transaction on error
+        if (client) await client.query('ROLLBACK');
+        console.error('Error creating order:', error);
         return {
             statusCode: 500,
             headers: { 
-                "Content-Type": "application/json"
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
-            body: JSON.stringify({ 
-                message: "Failed to create order",
-                errorDetails: error.message,
-                errorStack: error.stack
-            }),
+            body: JSON.stringify({ error: 'Failed to create order', details: error.message }),
         };
+    } finally {
+        await client.end();
     }
 };
+
